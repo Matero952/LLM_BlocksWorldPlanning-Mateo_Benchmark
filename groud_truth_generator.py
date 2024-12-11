@@ -128,9 +128,9 @@ def solve_pddl_plan(domain, problem):
         assert line2[0] == "stack" or line2[0] == "put-down" or line2[0] == "", f"line2[0] not expected type instead was {line2[0]}"
 
         if line1[0] == "unstack" or line1[0] == "pick-up":
-            outputs["pick"] = line1[1]
+            outputs["pick"] = line1[1].strip()
         if line2[0] == "stack":
-            outputs["place"] = line2[2]
+            outputs["place"] = line2[2].strip()
         if line2[0] == "put-down":
             outputs["place"] = "table"
 
