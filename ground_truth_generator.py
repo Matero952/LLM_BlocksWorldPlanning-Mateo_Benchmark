@@ -1,7 +1,7 @@
 import subprocess
 import pandas as pd
 from state_generator import generate_block_states
-
+import json
 def generate_pddl(start_state, end_state):
     """
     Generates a simple PDDL domain and problem to transition from start_state to end_state.
@@ -159,5 +159,5 @@ if __name__ == "__main__":
             best_move = solve_pddl_plan(domain_pddl, problem_pddl)
             print(f"   {best_move}")
             print()
-            df.loc[len(df)] = [start_state, end_state, best_move]
+            df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]
     df.to_csv("ground_truth.csv", index = False)
