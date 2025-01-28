@@ -1,5 +1,6 @@
 import re
 from openai import OpenAI
+from APIKeys import OAI_APIKEY
 
 """
 This module defines an Experiment class to interact with a language model API for processing samples
@@ -58,7 +59,7 @@ class OAI_Experiment:
     def __init__(self, model_name, prompt_function):
         self.model_name = model_name
         self.prompt_function = prompt_function
-        self.client = OpenAI(api_key= API_KEY)
+        self.client = OpenAI(api_key= OAI_APIKEY)
 
     def process_sample(self, start_state, end_state):
         prompt = self.prompt_function(start_state, end_state)
@@ -74,14 +75,12 @@ class OAI_Experiment:
             ],
         )
         result = response.choices[0].message.content
-        try:
-            pick_match = re.search(r"(?i)pick\s*:\s*(.*)", result)
-            place_match = re.search(r"(?i)place\s*:\s*(.*)", result)
-            pick_str = pick_match.group(1).strip()
-            place_str = place_match.group(1).strip()
-        except:
-            pick_str = "error"
-            place_str = "error"
+        
+        pick_match = re.search(r"(?i)pick\s*:\s*(.*)", result)
+        place_match = re.search(r"(?i)place\s*:\s*(.*)", result)
+        pick_str = pick_match.group(1).strip()
+        place_str = place_match.group(1).strip()
+        
         
         output = {"pick": pick_str, "place": place_str}
         return result, output
@@ -89,7 +88,6 @@ class OAI_Experiment:
 if __name__ == "__main__":
     from prompts import get_basic_prompt
     import pandas as pd
-    from APIKeys import API_KEY
     import json
 
     

@@ -152,7 +152,7 @@ def solve_pddl_plan(domain, problem):
     
     result = subprocess.run(solver_command, capture_output=True, text=True)
     out_file = "./problem.pddl.soln"
-    outputs = {"pick":None, "place":None}
+    outputs = {"pick":"None", "place":"None"}
     with open(out_file, "r") as file:
         line1 = file.readline()
         line1 = line1.replace("(", "").replace(")", "").split(" ")

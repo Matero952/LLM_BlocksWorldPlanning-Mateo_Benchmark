@@ -1,30 +1,53 @@
 from prompts import get_basic_prompt
+
 import pandas as pd
-from APIKeys import API_KEY
-from experiment import Experiment
-from openai import OpenAI
+from experiments import OAI_Experiment
 import json
 import os
 
+"""
+This module runs an experiment using a specified model and prompt function, processes a dataset of ground truth values, 
+and saves the results to a CSV file.
 
+Functions:
+    run_experiment(experiment, suffix=""):
+        Runs the experiment with the given model and prompt function, processes each sample in the dataset, 
+        and saves the results to a CSV file.
 
-def run_experiment(model, prompt):
-    print(f"\n\n\n\nbegining to run experiment {model=} {prompt=}")
-    df = pd.read_csv('./ground_truth.csv')
-    client = OpenAI(
-        api_key= API_KEY,
-    )
+Classes:
+    OAI_Experiment:
+        A class representing the experiment to be run, which includes methods for processing samples.
+
+Modules:
+    prompts:
+        Contains functions for generating prompts.
+    experiments:
+        Contains the OAI_Experiment class and other related functionalities.
+"""
+
     
-    if prompt == "basic_prompt":
-        prompt_func = get_basic_prompt
+def run_experiment(experiment, suffix=""):
+    """
+    Runs the experiment with the given model and prompt function, processes each sample in the dataset, 
+    and saves the results to a CSV file.
 
-    exp = Experiment(model, prompt_func, client)
+    Args:
+        experiment (OAI_Experiment): An instance of the OAI_Experiment class, which includes the model and prompt function to be used.
+        suffix (str, optional): A suffix to be added to the results directory and file names. Defaults to "".
 
-    save_dir = os.path.join("./results", f'{model}_{prompt}/')
+    Returns:
+        None
+    """
+
+    print(f"\n\n\n\nbegining to run experiment {experiment.model_name=} {experiment.prompt_function=}")
+    df = pd.read_csv('./ground_truth.csv')
+
+    os.makedirs("./results/", exist_ok=True)
+    save_dir = os.path.join("./results/", f'{experiment.model_name}{suffix}/')
     os.makedirs(save_dir, exist_ok=True)
 
     new_df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move', 'predicted_next_best_move', "response"])
-    newdf_path = os.path.join(save_dir, f'{model}_{prompt}results.csv')
+    newdf_path = os.path.join(save_dir, f'{experiment.model_name}{suffix}_results.csv')
 
     correct = 0
     seen = 0
@@ -32,7 +55,7 @@ def run_experiment(model, prompt):
         start_state = json.loads(row['start_state'])
         end_state = json.loads(row['end_state'])
         label = json.loads(row['next_best_move'])
-        response, pred = exp.process_sample(start_state, end_state)
+        response, pred = experiment.process_sample(start_state, end_state)
         correct += 1 if pred == label else 0
         seen += 1
         new_df.loc[len(new_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]
@@ -41,4 +64,5 @@ def run_experiment(model, prompt):
 
 
 if __name__ =="__main__":
-    run_experiment("gpt-4o-2024-11-20",  "basic_prompt")
+    models = "gpt-4o-mini"
+    run_experiment(OAI_Experiment(models, get_basic_prompt))
