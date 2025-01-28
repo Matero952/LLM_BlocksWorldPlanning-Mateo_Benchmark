@@ -196,6 +196,7 @@ def generate_ground_truth(blocks, csv_path):
             print()
             df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]
     df.to_csv(f"{csv_path}", index = False)
+    return csv_path
 
 if __name__ == "__main__":
     # Example start and end states:

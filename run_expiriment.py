@@ -26,7 +26,7 @@ Modules:
 """
 
     
-def run_experiment(experiment, suffix=""):
+def run_experiment(experiment, ground_truth_csv_path, suffix=""):
     """
     Runs the experiment with the given model and prompt function, processes each sample in the dataset, 
     and saves the results to a CSV file.
@@ -36,11 +36,11 @@ def run_experiment(experiment, suffix=""):
         suffix (str, optional): A suffix to be added to the results directory and file names. Defaults to "".
 
     Returns:
-        None
+        accuracy: float
     """
 
     print(f"\n\n\n\nbegining to run experiment {experiment.model_name=} {experiment.prompt_function=}")
-    df = pd.read_csv('./ground_truth.csv')
+    df = pd.read_csv(ground_truth_csv_path)
 
     os.makedirs("./results/", exist_ok=True)
     save_dir = os.path.join("./results/", f'{experiment.model_name}{suffix}/')
@@ -62,7 +62,11 @@ def run_experiment(experiment, suffix=""):
         print(f"\rProcessing: {index+1}/{len(df)}, accuracy:{correct/seen} ({correct} / {seen})" , end="")
         new_df.to_csv(newdf_path, index = False)
 
+    with open(os.path.join(save_dir, f'{experiment.model_name}{suffix}_accuracy.txt'), 'w') as f:
+        f.write(f"Accuracy: {correct/seen}")
+    return correct/seen
+
 
 if __name__ =="__main__":
     models = "gpt-4o-mini"
-    run_experiment(OAI_Experiment(models, get_basic_prompt))
+    run_experiment(OAI_Experiment(models, get_basic_prompt), ground_truth_csv_path="./ground_truth.csv")
