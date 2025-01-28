@@ -2,6 +2,41 @@ import subprocess
 import pandas as pd
 from state_generator import generate_block_states
 import json
+
+"""
+Module for the ground truth generator.
+This module provides functions to generate PDDL (Planning Domain Definition Language) domain and problem files 
+for a simple Blocksworld scenario, and to solve the generated PDDL problem using the Pyperplan solver. 
+It also includes functionality to generate ground truth data for different block configurations.
+Functions:
+    generate_pddl(start_state, end_state):
+        Generates a simple PDDL domain and problem to transition from start_state to end_state.
+
+        Args:
+            start_state (dict): A dictionary mapping block -> placement.
+            end_state (dict): A dictionary mapping block -> placement with desired final configuration.
+        Returns:
+            tuple: (domain_pddl, problem_pddl)
+    solve_pddl_plan(domain, problem):
+        Solves the given PDDL problem using Pyperplan and returns the resulting plan or an error message.
+
+        Args:
+            domain (str): PDDL domain definition.
+            problem (str): PDDL problem definition.
+        Returns:
+            dict: The resulting plan with 'pick' and 'place' actions or an error message.
+    generate_ground_truth(blocks, save_dir):
+        Generates ground truth data for different block configurations and saves it to a CSV file.
+
+        Args:
+            blocks (list): A list of block names.
+            csv_path (str): path to save the ground truth csv to
+        Returns:
+            None
+"""
+
+
+
 def generate_pddl(start_state, end_state):
     """
     Generates a simple PDDL domain and problem to transition from start_state to end_state.
@@ -139,13 +174,13 @@ def solve_pddl_plan(domain, problem):
         #print(f"{line1}")
         #print(f"{line2}")
 
-        
-
     return outputs
 
-if __name__ == "__main__":
-    # Example start and end states:
-    blocks = ["red_block", "blue_block", "yellow_block"]
+        
+def generate_ground_truth(blocks, csv_path):
+    """
+    Generates ground truth data for different block configurations and saves it to a CSV file.
+    """
     starting_states = generate_block_states(blocks)
     ending_states = generate_block_states(blocks)
     df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move'])
@@ -160,4 +195,9 @@ if __name__ == "__main__":
             print(f"   {best_move}")
             print()
             df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]
-    df.to_csv("ground_truth.csv", index = False)
+    df.to_csv(f"{csv_path}", index = False)
+
+if __name__ == "__main__":
+    # Example start and end states:
+    blocks = ["red_block", "blue_block", "yellow_block"]
+    generate_ground_truth(blocks, "./ground_truth.csv")

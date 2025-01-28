@@ -4,3 +4,4 @@ problem.pddl.soln
 __pycache__
 APIKeys.py
 metrics.txt
+ground_truth.csv
