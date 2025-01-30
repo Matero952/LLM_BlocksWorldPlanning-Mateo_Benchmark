@@ -7,4 +7,12 @@ metrics.txt
 grounded_truth.csv
 *.csv
 /results/
+<<<<<<< HEAD
 *.png
+=======
+*.png
+.env
+
+Experiments/Gemini/GEMConstants.py
+Experiments/DeepSeek/DSConstants.py
+>>>>>>> b47a2bd (Implemented gemini and finally fixed whoopsie)

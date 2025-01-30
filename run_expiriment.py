@@ -1,9 +1,18 @@
+<<<<<<< HEAD
 from prompts import get_basic_prompt
 
 import pandas as pd
 from experiments import OAI_Experiment
 import json
 import os
+=======
+from Experiments.Gemini.GEMExperiment import GEMExperiment
+from prompts import get_basic_prompt
+import pandas as pd
+import json
+import os
+import re
+>>>>>>> b47a2bd (Implemented gemini and finally fixed whoopsie)
 
 """
 This module runs an experiment using a specified model and prompt function, processes a dataset of ground truth values, 
@@ -39,6 +48,7 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
         accuracy: float
     """
 
+<<<<<<< HEAD
     print(f"\n\n\n\nbegining to run experiment {experiment.model_name=} {experiment.prompt_function=}")
     df = pd.read_csv(ground_truth_csv_path)
 
@@ -48,6 +58,15 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
 
     new_df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move', 'predicted_next_best_move', "response"])
     newdf_path = os.path.join(save_dir, f'{experiment.model_name}{suffix}_results.csv')
+=======
+    print(f"\n\n\n\nbegining to run experiment {experiment.model=} {experiment.prompt_func=}")
+    df = pd.read_csv(ground_truth_csv_path)
+
+    os.makedirs("/home/dante/Github/LLM_Blocks-Mateo/results", exist_ok=True)
+    save_dir = os.path.join("/home/dante/Github/LLM_Blocks-Mateo/results")
+    new_df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move', 'predicted_next_best_move', "response"])
+    newdf_path = os.path.join(save_dir, f'{experiment.model}{suffix}_results.csv')
+>>>>>>> b47a2bd (Implemented gemini and finally fixed whoopsie)
 
     correct = 0
     seen = 0
@@ -68,5 +87,10 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
 
 
 if __name__ =="__main__":
+<<<<<<< HEAD
     models = "gpt-4o-mini"
     run_experiment(OAI_Experiment(models, get_basic_prompt), ground_truth_csv_path="./ground_truth.csv")
+=======
+    models = "gemini-1.5-flash"
+    run_experiment(GEMExperiment(models, get_basic_prompt), ground_truth_csv_path="./ground_truth.csv")
+>>>>>>> b47a2bd (Implemented gemini and finally fixed whoopsie)
