@@ -15,4 +15,5 @@ grounded_truth.csv
 
 Experiments/Gemini/GEMConstants.py
 Experiments/DeepSeek/DSConstants.py
+venv
 >>>>>>> b47a2bd (Implemented gemini and finally fixed whoopsie)
