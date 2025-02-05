@@ -1,17 +1,22 @@
 import re
+from os import environ
 import google.generativeai as genai
 from google.ai.generativelanguage_v1 import GenerateContentResponse
 import json
-from sympy import content
-from Experiments.Gemini.GEMConstants import API_KEY
+from dotenv import load_dotenv
+import os
+load_dotenv()
+dotenv_path = '/home/mateo/Github/LLM_Blocks-Mateo/.env'
+load_dotenv(dotenv_path)
+
 
 class GEMExperiment:
 
-    def __init__(self, model, prompt_func):
+    def __init__(self, model, prompt_function):
         self.model = genai.GenerativeModel(model)
-        genai.configure(api_key=API_KEY)
-        self.prompt_func = prompt_func
-        self.model_name = 'gemini-1.5-flash'
+        genai.configure(api_key=os.getenv("GEMINI"))
+        self.prompt_func = prompt_function
+        self.model_name = model
 
     def process_sample(self, start, end):
         prompt = self.prompt_func(start, end)
@@ -28,13 +33,10 @@ class GEMExperiment:
             #     },
             # ],
         )
-        print(response)
         result = response.candidates[0].content.parts[0].text
         #Figured it out (:
         # result = data["candidates"][0]["message"]["content"]
         # result = GenerateContentResponse.candidates[0]
-        print(f"result == {result}")
-
         #response.candidates[0].message.content
 
         pick_match = re.search(r"(?i)pick\s*:\s*(.*)", result)
@@ -51,7 +53,7 @@ if __name__ == "__main__":
     model = f"gemini-1.5-flash"
     print(model)
     experiment_GEM = GEMExperiment(model, get_basic_prompt)
-    df = pd.read_csv('/home/dante/Github/Robotics/LLM_Blocks-Mateo/ground_truth.csv')
+    df = pd.read_csv('../../ground_truth.csv')
     row = df.sample(n=1).iloc[0]
     start_state = json.loads(row['start_state'])
     end_state = json.loads(row['end_state'])
