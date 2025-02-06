@@ -78,8 +78,12 @@ def run_experiment(experiment, ground_truth_csv_path, quota, suffix=""):
             print("Processing")
             correct += 1 if pred == label else 0
             seen += 1
-        new_df.loc[len(new_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred),
-                                   response]
+            new_df = pd.concat([new_df, pd.DataFrame(
+                [[json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]],
+                columns=['start_state', 'end_state', 'next_best_move', 'predicted_next_best_move', "response"])],
+                               ignore_index=True)
+
+        # new_df.loc[len(new_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]
         print(f"\rProcessing: {index + 1}/{len(df)}, accuracy:{correct / seen} ({correct} / {seen})", end="")
         new_df.to_csv(newdf_path, index=False)
         time.sleep(quota)

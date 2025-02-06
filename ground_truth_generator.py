@@ -36,7 +36,6 @@ Functions:
 """
 
 
-
 def generate_pddl(start_state, end_state):
     """
     Generates a simple PDDL domain and problem to transition from start_state to end_state.
@@ -128,6 +127,7 @@ def generate_pddl(start_state, end_state):
 
     return domain_pddl, problem_pddl
 
+
 def solve_pddl_plan(domain, problem):
     """
     Solves the given PDDL problem using Pyperplan.
@@ -149,18 +149,20 @@ def solve_pddl_plan(domain, problem):
 
     # Run Pyperplan solver
     solver_command = ["pyperplan", "--heuristic", "hff", "--search", "astar", domain_file, problem_file]
-    
+
     result = subprocess.run(solver_command, capture_output=True, text=True)
     out_file = "./problem.pddl.soln"
-    outputs = {"pick":"None", "place":"None"}
+    outputs = {"pick": "None", "place": "None"}
     with open(out_file, "r") as file:
         line1 = file.readline()
         line1 = line1.replace("(", "").replace(")", "").split(" ")
-        assert line1[0] == "unstack" or line1[0] == "pick-up" or line1[0] == "", f"line1[0] not expected type instead was {line1[0]}"
+        assert line1[0] == "unstack" or line1[0] == "pick-up" or line1[
+            0] == "", f"line1[0] not expected type instead was {line1[0]}"
 
         line2 = file.readline()
         line2 = line2.replace("(", "").replace(")", "").split(" ")
-        assert line2[0] == "stack" or line2[0] == "put-down" or line2[0] == "", f"line2[0] not expected type instead was {line2[0]}"
+        assert line2[0] == "stack" or line2[0] == "put-down" or line2[
+            0] == "", f"line2[0] not expected type instead was {line2[0]}"
 
         if line1[0] == "unstack" or line1[0] == "pick-up":
             outputs["pick"] = line1[1].strip()
@@ -169,14 +171,12 @@ def solve_pddl_plan(domain, problem):
         if line2[0] == "put-down":
             outputs["place"] = "table"
 
-
-
-        #print(f"{line1}")
-        #print(f"{line2}")
+        # print(f"{line1}")
+        # print(f"{line2}")
 
     return outputs
 
-        
+
 def generate_ground_truth(blocks, csv_path):
     """
     Generates ground truth data for different block configurations and saves it to a CSV file.
@@ -186,17 +186,22 @@ def generate_ground_truth(blocks, csv_path):
     df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move'])
 
     for i, start_state in enumerate(starting_states):
-        #print(f"State {i + 1}: {start_state}")
+        # print(f"State {i + 1}: {start_state}")
 
         for j, end_state in enumerate(ending_states):
-            print(f"State {i + 1} {j+1}: \n{start_state=}\n{end_state=}")
+            print(f"State {i + 1} {j + 1}: \n{start_state=}\n{end_state=}")
             domain_pddl, problem_pddl = generate_pddl(start_state, end_state)
             best_move = solve_pddl_plan(domain_pddl, problem_pddl)
             print(f"   {best_move}")
             print()
-            df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]
-    df.to_csv(f"{csv_path}", index = False)
+            new_row = pd.DataFrame([[json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]],
+                                   columns=['start_state', 'end_state', 'best_move'])
+
+            df = pd.concat([df, new_row], ignore_index=True)
+            # df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]
+    df.to_csv(f"{csv_path}", index=False)
     return csv_path
+
 
 if __name__ == "__main__":
     # Example start and end states:
