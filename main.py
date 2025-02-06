@@ -11,7 +11,7 @@ if __name__ == "__main__":
     csv_path = generate_ground_truth(blocks, "ground_truth.csv")
     quotas = [5.1, 4.1, 30.1]
     #Quota limits for my time.sleep()
-    models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro", ]
+    models = ["gemini-1.5-pro"]#"gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro", ]
     # mapped_models = list(zip(models, quotas))
     # print(f"Mapped models: {mapped_models}")
     #NOTES ON QUOTA:
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         elif model == "gemini-1.5-flash":
             model_quota = 4.1
         else:
-            model_quota = 30.1
+            model_quota = 35
         accuracy = run_expiriment.run_experiment(GEMExperiment(model, get_basic_prompt), ground_truth_csv_path=csv_path, quota=model_quota)
         results.append((model, accuracy))
     # Plotting the results

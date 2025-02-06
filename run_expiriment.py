@@ -59,38 +59,35 @@ def run_experiment(experiment, ground_truth_csv_path, quota, suffix=""):
     correct = 0
     seen = 0
     for index, row in df.iterrows():
+        response, pred = None, None
+        match = False
         start_state = json.loads(row['start_state'])
         end_state = json.loads(row['end_state'])
         label = json.loads(row['next_best_move'])
-        response, pred = experiment.process_sample(start_state, end_state)
-        correct += 1 if pred == label else 0
-        seen += 1
+        if new_df.loc[index, 'start_state'] == json.dumps(start_state) and new_df.loc[index, 'end_state'] == json.dumps(end_state):
+            if new_df.loc[index, 'predicted_next_best_move'] == json.dumps(label):
+                print("Checking")
+                match = True
+                if match:
+                    correct += 1
+                    seen += 1
+                else:
+                    seen += 1
+        else:
+            response, pred = experiment.process_sample(start_state, end_state)
+            print("Processing")
+            correct += 1 if pred == label else 0
+            seen += 1
         new_df.loc[len(new_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred),
                                    response]
         print(f"\rProcessing: {index + 1}/{len(df)}, accuracy:{correct / seen} ({correct} / {seen})", end="")
         new_df.to_csv(newdf_path, index=False)
-        # if not (new_df['start_state'] == json.dumps(start_state) and new_df['end_state'] == json.dumps(end_state)):
-        #     response, pred = experiment.process_sample(start_state, end_state)
-        #     correct += 1 if pred == label else 0
-        #     seen += 1
-        #     new_df.loc[len(new_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]
-        #     print(f"\rProcessing: {index+1}/{len(df)}, accuracy:{correct/seen} ({correct} / {seen})" , end="")
-        #     new_df.to_csv(newdf_path, index = False)
-        # else:
-        #         predicted_value = new_df[(new_df['start_state'] == json.dumps(start_state)) & (new_df['end_state'] == json.dumps(end_state))]['predicted_next_best_move']
-        #         print(f"label: {label}, predicted value: {predicted_value}")
-        #         if predicted_value.any() == label:
-        #             correct += 1
-        #             seen += 1
-        #         else:
-        #             correct += 0
-        #             seen += 1
         time.sleep(quota)
     with open(os.path.join(save_dir, f'{experiment.model_name}{suffix}_accuracy.txt'), 'w') as f:
         f.write(f"Accuracy: {correct/seen}")
     return correct/seen
 
-# if __name__ =="__main__":
-#     models = "gemini-2.0-flash-exp"
-#     run_experiment(GEMExperiment(models, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
+if __name__ =="__main__":
+    models = "gemini-2.0-flash-exp"
+    run_experiment(GEMExperiment(models, get_basic_prompt), ground_truth_csv_path="ground_truth.csv", quota=5.1)
 
