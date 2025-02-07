@@ -7,6 +7,7 @@ import os
 import re
 import time
 
+
 """
 This module runs an experiment using a specified model and prompt function, processes a dataset of ground truth values, 
 and saves the results to a CSV file.
@@ -28,7 +29,7 @@ Modules:
 """
 
     
-def run_experiment(experiment, ground_truth_csv_path, quota, suffix=""):
+def run_experiment(experiment, ground_truth_csv_path, suffix=""):
     """
     Runs the experiment with the given model and prompt function, processes each sample in the dataset, 
     and saves the results to a CSV file.
@@ -40,7 +41,11 @@ def run_experiment(experiment, ground_truth_csv_path, quota, suffix=""):
     Returns:
         accuracy: float
     """
+    quotas = {"gemini-2.0-flash-exp": 5.01, "gemini-1.5-flash": 4.01, "gemini-2.0-flash-001": 4.01,
+              "gemini-2.0-flash-lite-preview-02-05": 4.01}
 
+    model_quota = quotas[f"{experiment.model_name}"]
+    print(f"Experiment name: {experiment.model_name}")
     print(f"\n\n\n\nbeginning to run experiment {experiment.model_name=} {experiment.prompt_func=}")
     df = pd.read_csv(ground_truth_csv_path)
 
@@ -89,12 +94,12 @@ def run_experiment(experiment, ground_truth_csv_path, quota, suffix=""):
         # new_df.loc[len(new_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]
         print(f"\rProcessing: {index + 1}/{len(df)}, accuracy:{correct / seen} ({correct} / {seen})", end="")
         new_df.to_csv(newdf_path, index=False)
-        time.sleep(quota)
+        time.sleep(model_quota)
     with open(os.path.join(save_dir, f'{experiment.model_name}{suffix}_accuracy.txt'), 'w') as f:
         f.write(f"Accuracy: {correct/seen}")
     return correct/seen
 
 if __name__ =="__main__":
     models = "gemini-2.0-flash-exp"
-    run_experiment(GEMExperiment(models, get_basic_prompt), ground_truth_csv_path="ground_truth.csv", quota=5.1)
+    run_experiment(GEMExperiment(models, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
 
