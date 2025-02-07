@@ -64,7 +64,10 @@ def run_experiment(experiment, ground_truth_csv_path, quota, suffix=""):
         start_state = json.loads(row['start_state'])
         end_state = json.loads(row['end_state'])
         label = json.loads(row['next_best_move'])
-        if new_df.loc[index, 'start_state'] == json.dumps(start_state) and new_df.loc[index, 'end_state'] == json.dumps(end_state):
+        # assert index < len(df), "Please work"
+        if (index < len(new_df) and
+                new_df.loc[index, 'start_state'] == json.dumps(start_state) and
+                new_df.loc[index, 'end_state'] == json.dumps(end_state)):
             if new_df.loc[index, 'predicted_next_best_move'] == json.dumps(label):
                 print("Checking")
                 match = True

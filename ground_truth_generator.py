@@ -11,7 +11,6 @@ It also includes functionality to generate ground truth data for different block
 Functions:
     generate_pddl(start_state, end_state):
         Generates a simple PDDL domain and problem to transition from start_state to end_state.
-
         Args:
             start_state (dict): A dictionary mapping block -> placement.
             end_state (dict): A dictionary mapping block -> placement with desired final configuration.
@@ -19,7 +18,6 @@ Functions:
             tuple: (domain_pddl, problem_pddl)
     solve_pddl_plan(domain, problem):
         Solves the given PDDL problem using Pyperplan and returns the resulting plan or an error message.
-
         Args:
             domain (str): PDDL domain definition.
             problem (str): PDDL problem definition.
@@ -27,7 +25,6 @@ Functions:
             dict: The resulting plan with 'pick' and 'place' actions or an error message.
     generate_ground_truth(blocks, save_dir):
         Generates ground truth data for different block configurations and saves it to a CSV file.
-
         Args:
             blocks (list): A list of block names.
             csv_path (str): path to save the ground truth csv to
@@ -39,17 +36,14 @@ Functions:
 def generate_pddl(start_state, end_state):
     """
     Generates a simple PDDL domain and problem to transition from start_state to end_state.
-
     Args:
-        start_state (dict): A dictionary mapping block -> placement. 
+        start_state (dict): A dictionary mapping block -> placement.
                             For example: {'red': 'table', 'blue': 'red', ...}
         end_state (dict): A dictionary mapping block -> placement with desired final configuration.
-
     Returns:
         tuple: (domain_pddl, problem_pddl)
     """
     blocks = list(start_state.keys())
-
     # Define a standard Blocksworld domain in PDDL
     domain_pddl = """(define (domain blocksworld)
     (:requirements :strips)
@@ -60,25 +54,21 @@ def generate_pddl(start_state, end_state):
         (handempty)
         (holding ?x)
     )
-
     (:action pick-up
         :parameters (?x)
         :precondition (and (ontable ?x) (clear ?x) (handempty))
         :effect (and (holding ?x) (not (ontable ?x)) (not (clear ?x)) (not (handempty)))
     )
-
     (:action put-down
         :parameters (?x)
         :precondition (holding ?x)
         :effect (and (ontable ?x) (clear ?x) (handempty) (not (holding ?x)))
     )
-
     (:action stack
         :parameters (?x ?y)
         :precondition (and (holding ?x) (clear ?y))
         :effect (and (on ?x ?y) (clear ?x) (handempty) (not (holding ?x)) (not (clear ?y)))
     )
-
     (:action unstack
         :parameters (?x ?y)
         :precondition (and (on ?x ?y) (clear ?x) (handempty))
@@ -86,7 +76,6 @@ def generate_pddl(start_state, end_state):
     )
 )
 """
-
     # Construct the initial state
     initial_state = []
     # If a block is 'table', it means it is on the table.
@@ -96,7 +85,6 @@ def generate_pddl(start_state, end_state):
             initial_state.append(f"(ontable {block})")
         else:
             initial_state.append(f"(on {block} {placement})")
-
     # Identify which blocks are clear
     # A block is clear if no other block is on top of it in the initial configuration
     blocks_above = set(start_state.values()) - {'table'}
@@ -104,10 +92,8 @@ def generate_pddl(start_state, end_state):
         if block not in blocks_above:
             # No block is on this block, so it is clear
             initial_state.append(f"(clear {block})")
-
     # The hand starts empty
     initial_state.append("(handempty)")
-
     # Construct the goal state
     goal_state = []
     for block, placement in end_state.items():
@@ -115,7 +101,6 @@ def generate_pddl(start_state, end_state):
             goal_state.append(f"(ontable {block})")
         else:
             goal_state.append(f"(on {block} {placement})")
-
     problem_pddl = f"""
 (define (problem blocksworld-problem)
     (:domain blocksworld)
@@ -124,18 +109,15 @@ def generate_pddl(start_state, end_state):
     (:goal (and {" ".join(goal_state)}))
 )
 """
-
     return domain_pddl, problem_pddl
 
 
 def solve_pddl_plan(domain, problem):
     """
     Solves the given PDDL problem using Pyperplan.
-
     Args:
         domain (str): PDDL domain definition.
         problem (str): PDDL problem definition.
-
     Returns:
         str: The resulting plan or an error message.
     """
@@ -146,7 +128,6 @@ def solve_pddl_plan(domain, problem):
         f.write(domain)
     with open(problem_file, "w") as f:
         f.write(problem)
-
     # Run Pyperplan solver
     solver_command = ["pyperplan", "--heuristic", "hff", "--search", "astar", domain_file, problem_file]
 
@@ -158,22 +139,18 @@ def solve_pddl_plan(domain, problem):
         line1 = line1.replace("(", "").replace(")", "").split(" ")
         assert line1[0] == "unstack" or line1[0] == "pick-up" or line1[
             0] == "", f"line1[0] not expected type instead was {line1[0]}"
-
         line2 = file.readline()
         line2 = line2.replace("(", "").replace(")", "").split(" ")
         assert line2[0] == "stack" or line2[0] == "put-down" or line2[
             0] == "", f"line2[0] not expected type instead was {line2[0]}"
-
         if line1[0] == "unstack" or line1[0] == "pick-up":
             outputs["pick"] = line1[1].strip()
         if line2[0] == "stack":
             outputs["place"] = line2[2].strip()
         if line2[0] == "put-down":
             outputs["place"] = "table"
-
         # print(f"{line1}")
         # print(f"{line2}")
-
     return outputs
 
 
@@ -184,21 +161,15 @@ def generate_ground_truth(blocks, csv_path):
     starting_states = generate_block_states(blocks)
     ending_states = generate_block_states(blocks)
     df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move'])
-
     for i, start_state in enumerate(starting_states):
         # print(f"State {i + 1}: {start_state}")
-
         for j, end_state in enumerate(ending_states):
             print(f"State {i + 1} {j + 1}: \n{start_state=}\n{end_state=}")
             domain_pddl, problem_pddl = generate_pddl(start_state, end_state)
             best_move = solve_pddl_plan(domain_pddl, problem_pddl)
             print(f"   {best_move}")
             print()
-            new_row = pd.DataFrame([[json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]],
-                                   columns=['start_state', 'end_state', 'best_move'])
-
-            df = pd.concat([df, new_row], ignore_index=True)
-            # df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]
+            df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move)]
     df.to_csv(f"{csv_path}", index=False)
     return csv_path
 

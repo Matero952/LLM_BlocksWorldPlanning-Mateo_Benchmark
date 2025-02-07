@@ -1,5 +1,5 @@
 from Experiments.Gemini.GEMExperiment import GEMExperiment
-from PDDL.ground_truth_generator import generate_ground_truth
+from ground_truth_generator import generate_ground_truth
 from prompts import get_basic_prompt
 from matplotlib import pyplot as plt
 import run_expiriment
@@ -11,7 +11,7 @@ if __name__ == "__main__":
     csv_path = generate_ground_truth(blocks, "ground_truth.csv")
     quotas = [5.1, 4.1, 30.1]
     #Quota limits for my time.sleep()
-    models = ["gemini-1.5-pro"]#"gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro", ]
+    models = ["gemini-2.0-flash-001", "gemini-2.0-flash-lite-preview-02-05"]#"gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro", ]
     # mapped_models = list(zip(models, quotas))
     # print(f"Mapped models: {mapped_models}")
     #NOTES ON QUOTA:
