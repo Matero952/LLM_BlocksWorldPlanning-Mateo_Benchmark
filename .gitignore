@@ -12,7 +12,7 @@ grounded_truth.csv
 =======
 *.png
 .env
-.idea/
+/.idea/
 Experiments/Gemini/GEMConstants.py
 Experiments/DeepSeek/DSConstants.py
 /venv/
