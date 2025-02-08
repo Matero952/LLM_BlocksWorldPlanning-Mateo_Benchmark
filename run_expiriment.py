@@ -73,26 +73,28 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
         if (index < len(new_df) and
                 new_df.loc[index, 'start_state'] == json.dumps(start_state) and
                 new_df.loc[index, 'end_state'] == json.dumps(end_state)):
+            checking = True
             if new_df.loc[index, 'predicted_next_best_move'] == json.dumps(label):
-                print("Checking")
+                print("Checking!")
                 match = True
-                if match:
-                    correct += 1
-                    seen += 1
-                else:
-                    seen += 1
+                correct += 1
+                seen += 1
+                # else:
+                #     correct += 0
+                #     seen += 1
+            else:
+                correct += 0
+                seen += 1
         else:
             response, pred = experiment.process_sample(start_state, end_state)
-            print("Processing")
+            print("Processing!")
             correct += 1 if pred == label else 0
             seen += 1
             new_df = pd.concat([new_df, pd.DataFrame(
                 [[json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]],
                 columns=['start_state', 'end_state', 'next_best_move', 'predicted_next_best_move', "response"])],
                                ignore_index=True)
-
-        # new_df.loc[len(new_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]
-        print(f"\rProcessing: {index + 1}/{len(df)}, accuracy:{correct / seen} ({correct} / {seen})", end="")
+        print(f"\rProcessing: {index + 1}/{len(df)}, accuracy:{correct / seen} ({correct} / {seen}, model: {experiment.model_name})", end="")
         new_df.to_csv(newdf_path, index=False)
         time.sleep(model_quota)
     with open(os.path.join(save_dir, f'{experiment.model_name}{suffix}_accuracy.txt'), 'w') as f:
@@ -100,6 +102,7 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
     return correct/seen
 
 if __name__ =="__main__":
-    models = "gemini-2.0-flash-exp"
-    run_experiment(GEMExperiment(models, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
+    models = ["gemini-2.0-flash-001","gemini-2.0-flash-lite-preview-02-05"]
+    for model in models:
+        run_experiment(GEMExperiment(model, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
 

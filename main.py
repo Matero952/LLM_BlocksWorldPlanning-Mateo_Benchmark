@@ -9,7 +9,6 @@ Runs a series of experiments to compare the performance of different language mo
 if __name__ == "__main__":
     blocks = ['red_block', 'blue_block', 'yellow_block']
     csv_path = generate_ground_truth(blocks, "ground_truth.csv")
-
     models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash-001",
               "gemini-2.0-flash-lite-preview-02-05"]
 
