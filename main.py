@@ -28,5 +28,4 @@ if __name__ == "__main__":
     plt.title('Accuracy of Different GPT Models')
     plt.ylim(0, 1)  # Assuming accuracy is between 0 and 1
     plt.show()
-    #TODO Create another figure comparing the results of all of the models.
 
