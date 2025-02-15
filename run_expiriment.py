@@ -40,13 +40,13 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
         accuracy: float
     """
     quotas = {"gemini-2.0-flash-exp": 5.01, "gemini-1.5-flash": 4.01, "gemini-2.0-flash-001": 4.01,
-              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33}
-
-    # model_quota = quotas[f"{experiment.model_name}"]
+              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, }
+    if experiment.model_name not in quotas.keys():
+        print(f"Error: {experiment.model_name} is not a valid model name.")
+        assert 0 > 1
     print(f"Experiment name: {experiment.model_name}")
     print(f"\n\n\n\nbeginning to run experiment {experiment.model_name=} {experiment.prompt_func=}")
     df = pd.read_csv(ground_truth_csv_path)
-
     os.makedirs("./results/", exist_ok=True)
     save_dir = os.path.join("./results/", f'{experiment.model_name}{suffix}/')
     os.makedirs(save_dir, exist_ok=True)
@@ -61,17 +61,15 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
     seen = 0
     for index, row in df.iterrows():
         model_quota = quotas[f"{experiment.model_name}"]
-        response, pred = None, None
-        match = False
         start_state = json.loads(row['start_state'])
         end_state = json.loads(row['end_state'])
         label = json.loads(row['next_best_move'])
         if (index < len(new_df) and
-            new_df.loc[index, 'start_state'] == json.dumps(start_state) and
-            new_df.loc[index, 'end_state'] == json.dumps(end_state)):
+            new_df.at[index, 'start_state'] == json.dumps(start_state) and
+            new_df.at[index, 'end_state'] == json.dumps(end_state)):
             model_quota = 0
             checking = True
-            if new_df.loc[index, 'predicted_next_best_move'] == json.dumps(label):
+            if new_df.at[index, 'predicted_next_best_move'] == json.dumps(label):
                 print("Checking!")
                 match = True
                 correct += 1
@@ -83,11 +81,12 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
         else:
             response, pred = experiment.process_sample(start_state, end_state)
             print("Processing!")
+            print(f"Processing row {index + 1}/{len(df)}: {row.to_dict()}")
             correct += 1 if pred == label else 0
             seen += 1
             new_df = pd.concat([new_df, pd.DataFrame(
                 [[json.dumps(start_state), json.dumps(end_state), json.dumps(label), json.dumps(pred), response]],
-                columns=['start_state', 'end_state', 'next_best_move', 'predicted_next_best_move', "response"])],
+                columns=['start_state','end_state','next_best_move','predicted_next_best_move',"response"])],
                                ignore_index=True)
         print(f"\rProcessing: {index + 1}/{len(df)}, accuracy:{correct / seen} ({correct} / {seen}, model: {experiment.model_name})", end="")
         new_df.to_csv(newdf_path, index=False)
@@ -98,17 +97,19 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
 
 if __name__ =="__main__":
     results = []
-    models = ["gemini-1.5-pro"]
+    models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-001", "gemini-2.0-flash-lite-preview-02-05", "gemini-2.0-flash-exp"]
     for model in models:
         accuracy = run_experiment(GEMExperiment(model, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
         results.append((model, accuracy))
     # Plotting the results
+    plt.rcParams.update({'font.size': 5})
     model_names = [result[0] for result in results]
     accuracies = [result[1] for result in results]
     plt.figure(figsize=(10, 6))
-    plt.bar(model_names, accuracies, color=['red', 'blue', 'yellow'])
-    plt.xlabel('Gemini Models')
-    plt.ylabel('Accuracy')
-    plt.title('Accuracy of Different GPT Models')
+    plt.bar(model_names, accuracies, color=['red', 'blue', 'yellow', "green", "purple"])
+    plt.xlabel('Gemini Models', fontsize=10)
+    plt.ylabel('Accuracy', fontsize=10)
+    plt.title('Accuracy of Different Gemini Models', fontsize=15)
     plt.ylim(0, 1)  # Assuming accuracy is between 0 and 1
     plt.show()
+
