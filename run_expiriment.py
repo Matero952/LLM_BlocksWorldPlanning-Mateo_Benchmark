@@ -5,6 +5,7 @@ import json
 import os
 import time
 import matplotlib.pyplot as plt
+from Experiments.Claude.ClaudeExperiment import ClaudeExperiment
 
 
 """
@@ -40,10 +41,9 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
         accuracy: float
     """
     quotas = {"gemini-2.0-flash-exp": 5.01, "gemini-1.5-flash": 4.01, "gemini-2.0-flash-001": 4.01,
-              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, }
+              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, "claude-3-5-haiku-latest" : 0}
     if experiment.model_name not in quotas.keys():
         print(f"Error: {experiment.model_name} is not a valid model name.")
-        assert 0 > 1
     print(f"Experiment name: {experiment.model_name}")
     print(f"\n\n\n\nbeginning to run experiment {experiment.model_name=} {experiment.prompt_func=}")
     df = pd.read_csv(ground_truth_csv_path)
@@ -97,9 +97,9 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
 
 if __name__ =="__main__":
     results = []
-    models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-001", "gemini-2.0-flash-lite-preview-02-05", "gemini-2.0-flash-exp"]
+    models = ["claude-3-5-haiku-latest"]
     for model in models:
-        accuracy = run_experiment(GEMExperiment(model, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
+        accuracy = run_experiment(ClaudeExperiment(model, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
         results.append((model, accuracy))
     # Plotting the results
     plt.rcParams.update({'font.size': 5})
@@ -107,9 +107,9 @@ if __name__ =="__main__":
     accuracies = [result[1] for result in results]
     plt.figure(figsize=(10, 6))
     plt.bar(model_names, accuracies, color=['red', 'blue', 'yellow', "green", "purple"])
-    plt.xlabel('Gemini Models', fontsize=10)
+    plt.xlabel('Claude Test', fontsize=10)
     plt.ylabel('Accuracy', fontsize=10)
-    plt.title('Accuracy of Different Gemini Models', fontsize=15)
+    plt.title(f'Accuracy of {model}', fontsize=15)
     plt.ylim(0, 1)  # Assuming accuracy is between 0 and 1
     plt.show()
 
