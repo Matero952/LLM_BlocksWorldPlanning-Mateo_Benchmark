@@ -6,6 +6,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 from Experiments.Claude.ClaudeExperiment import ClaudeExperiment
+from Experiments.grok.grokexperiment import grokexperiment
 
 
 """
@@ -41,9 +42,10 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
         accuracy: float
     """
     quotas = {"gemini-2.0-flash-exp": 5.01, "gemini-1.5-flash": 4.01, "gemini-2.0-flash-001": 4.01,
-              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, "claude-3-5-haiku-latest" : 0}
+              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, "claude-3-5-haiku-latest" : 0, "claude-3-5-sonnet-20241022" : 0, "grok-2-latest" : 0, "grok-2" : 0, "grok-beta" : 0, "grok-2-vision" : 0, "grok-2-vision-latest" : 0}
     if experiment.model_name not in quotas.keys():
         print(f"Error: {experiment.model_name} is not a valid model name.")
+
     print(f"Experiment name: {experiment.model_name}")
     print(f"\n\n\n\nbeginning to run experiment {experiment.model_name=} {experiment.prompt_func=}")
     df = pd.read_csv(ground_truth_csv_path)
@@ -97,19 +99,19 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
 
 if __name__ =="__main__":
     results = []
-    models = ["claude-3-5-haiku-latest"]
+    models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash-001", "gemini-2.0-flash-lite-preview-02-05", "gemini-1.5-pro", "claude-3-5-haiku-latest", "claude-3-5-sonnet-20241022", "grok-2-latest", "grok-2", "grok-beta"]
     for model in models:
-        accuracy = run_experiment(ClaudeExperiment(model, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
+        accuracy = run_experiment(grokexperiment(model, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
         results.append((model, accuracy))
     # Plotting the results
     plt.rcParams.update({'font.size': 5})
     model_names = [result[0] for result in results]
     accuracies = [result[1] for result in results]
     plt.figure(figsize=(10, 6))
-    plt.bar(model_names, accuracies, color=['red', 'blue', 'yellow', "green", "purple"])
-    plt.xlabel('Claude Test', fontsize=10)
-    plt.ylabel('Accuracy', fontsize=10)
-    plt.title(f'Accuracy of {model}', fontsize=15)
+    plt.bar(model_names, accuracies, color=['red', 'blue', 'yellow', "green", "purple", "orange", "pink", "brown", "cyan", "magenta"])
+    plt.xlabel('Models', fontsize=12)
+    plt.ylabel('Accuracy', fontsize=12)
+    plt.title(f'Accuracy of Different LLMs in Blocks Benchmark', fontsize=15)
     plt.ylim(0, 1)  # Assuming accuracy is between 0 and 1
     plt.show()
 
