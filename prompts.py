@@ -29,7 +29,7 @@ def get_basic_prompt(start_state, end_state):
     for block, placement in end_state.items():
         prompt += f"   {block} is on {placement}\n"
     prompt+= "\n"
-    prompt +="""what is the next best move to get us closer to the end state from the start state? Your answer needs to have two parts on two seperate lines.
+    prompt +="""what is the next best move to get us closer to the end state from the start state? Your answer needs to have two parts on two seperate lines, and also only one pick and place and please make sure to have the pick and place.
    pick: *object to be picked up*
    place: *object to put the picked object on*
 

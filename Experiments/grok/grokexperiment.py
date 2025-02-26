@@ -5,10 +5,8 @@ import os
 load_dotenv()
 dotenv_path = '/home/mateo/Github/LLM_Blocks-Mateo/.env'
 load_dotenv(dotenv_path)
-
 import os
 from openai import OpenAI
-
 class grokexperiment:
     def __init__(self, model, prompt_function):
         self.model = model

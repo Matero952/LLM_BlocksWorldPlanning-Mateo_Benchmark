@@ -4,9 +4,12 @@ import pandas as pd
 import json
 import os
 import time
+import regex as re
 import matplotlib.pyplot as plt
+from Experiments.transformers.transformersexperiment import transformersexperiment
 from Experiments.Claude.ClaudeExperiment import ClaudeExperiment
 from Experiments.grok.grokexperiment import grokexperiment
+import torch
 
 
 """
@@ -41,18 +44,22 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
     Returns:
         accuracy: float
     """
+    torch.cuda.empty_cache()
     quotas = {"gemini-2.0-flash-exp": 5.01, "gemini-1.5-flash": 4.01, "gemini-2.0-flash-001": 4.01,
-              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, "claude-3-5-haiku-latest" : 0, "claude-3-5-sonnet-20241022" : 0, "grok-2-latest" : 0, "grok-2" : 0, "grok-beta" : 0, "grok-2-vision" : 0, "grok-2-vision-latest" : 0}
+              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, "claude-3-5-haiku-latest" : 0, "claude-3-5-sonnet-20241022" : 0, "grok-2-latest" : 0, "grok-2" : 0, "grok-beta" : 0, "grok-2-vision" : 0, "grok-2-vision-latest" : 0, "Qwen/Qwen2.5-0.5B-Instruct" : 0, "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B" : 0}
     if experiment.model_name not in quotas.keys():
         print(f"Error: {experiment.model_name} is not a valid model name.")
-
-    print(f"Experiment name: {experiment.model_name}")
-    print(f"\n\n\n\nbeginning to run experiment {experiment.model_name=} {experiment.prompt_func=}")
+    model_name = transformer_name(experiment.model_name)
+    print(f"Experiment name: {model_name}")
+    print(f"\n\n\n\nbeginning to run experiment {model_name} {experiment.prompt_func=}")
     df = pd.read_csv(ground_truth_csv_path)
     os.makedirs("./results/", exist_ok=True)
-    save_dir = os.path.join("./results/", f'{experiment.model_name}{suffix}/')
+    print(f"Model name: {model_name}")
+    save_dir = os.path.join("./results/", model_name + f"{suffix}/")
+    # save_dir = os.path.join("./results/", re.search(r'[^()/]+$',experiment.model_name) + f"{suffix}/'")
+    # save_dir = os.path.join("./results/", f'{re.sub(r'.*/', '', experiment.model_name)}{suffix}/')
     os.makedirs(save_dir, exist_ok=True)
-    newdf_path = os.path.join(save_dir, f'{experiment.model_name}{suffix}_results.csv')
+    newdf_path = os.path.join(save_dir, f'{model_name}{suffix}_results.csv')
     if os.path.exists(newdf_path):
         new_df = pd.read_csv(newdf_path)
     else:
@@ -96,12 +103,15 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
     with open(os.path.join(save_dir, f'{experiment.model_name}{suffix}_accuracy.txt'), 'w') as f:
         f.write(f"Accuracy: {correct/seen}")
     return correct/seen
-
+def transformer_name(input):
+    match = re.search(r'[^()/]+$', input)
+    print(f"match = {match}")
+    return match.group() if match else input
 if __name__ =="__main__":
     results = []
-    models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash-001", "gemini-2.0-flash-lite-preview-02-05", "gemini-1.5-pro", "claude-3-5-haiku-latest", "claude-3-5-sonnet-20241022", "grok-2-latest", "grok-2", "grok-beta"]
+    models = ["deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"]
     for model in models:
-        accuracy = run_experiment(grokexperiment(model, get_basic_prompt), ground_truth_csv_path="ground_truth.csv")
+        accuracy = run_experiment(transformersexperiment(model=model, prompt_func=get_basic_prompt), ground_truth_csv_path='ground_truth.csv')
         results.append((model, accuracy))
     # Plotting the results
     plt.rcParams.update({'font.size': 5})
