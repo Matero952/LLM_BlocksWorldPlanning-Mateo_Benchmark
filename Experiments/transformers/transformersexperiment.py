@@ -13,11 +13,12 @@ class transformersexperiment:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.prompt_func = prompt_func
         self.model_name = model
-        self.pipe = pipeline("text-generation", model=self.model, max_new_tokens=250, device=self.device, temperature=0.6)
-        self.pattern = r"\b(red|yellow|blue|table|None|none)\b"
+        self.pipe = pipeline("text-generation", model=self.model, max_new_tokens=1500, device=self.device, temperature=0.5)
+        #Temperature here was 0.6 but i changed it to 0.5 because model outputs were just rambling.
+        self.pattern = r"(red|yellow|blue|table|None|none)"
         self.pattern_mapping = {"red": "red_block", "yellow": "yellow_block", "blue": "blue_block", "table": "table",
                            "none": "None"}
-        self.max_retries = 3
+        self.max_retries = 5
     def process_sample(self, start, end):
         pick_match, place_match, result = self.get_valid_output(start, end)
         try:
@@ -25,6 +26,7 @@ class transformersexperiment:
             place_match = (re.search(self.pattern, place_match)).group(1).lower()
         except AttributeError:
             print(f"Pick_match: {pick_match}, place_match: {place_match}")
+            print(f"Result: {result}")
             raise Exception("No match found.")
         print(f"Pick match group 1: {pick_match}")
         print(f"Pick match group 1 type: {type(pick_match)}")
@@ -49,6 +51,8 @@ class transformersexperiment:
             print(f"This message indicates that the model's response was not valid."
                   f"As I am using recursion here, I have a maximum depth set to: {self.max_retries}")
             result = respone[0]['generated_text'][1]['content']
+            # result = respone[0]['generated_text']
+            print(f"Result: {result}")
             pick_match = (re.search(r"(?i)pick\s*:\s*(.*)", result)).group(1).lower()
             place_match = (re.search(r"(?i)place\s*:\s*(.*)", result)).group(1).lower()
         except AttributeError:
@@ -64,7 +68,7 @@ if __name__ == "__main__":
     print(f"Model: {model}")
     experiment = transformersexperiment(model=model, prompt_func=get_basic_prompt)
     df = pd.read_csv('../../ground_truth.csv')
-    row = df.iloc[2]
+    row = df.iloc[3]
     # row = df.sample(n=1).iloc[0]
     start_state = json.loads(row['start_state'])
     end_state = json.loads(row['end_state'])

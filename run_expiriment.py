@@ -46,7 +46,9 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
     """
     torch.cuda.empty_cache()
     quotas = {"gemini-2.0-flash-exp": 5.01, "gemini-1.5-flash": 4.01, "gemini-2.0-flash-001": 4.01,
-              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, "claude-3-5-haiku-latest" : 0, "claude-3-5-sonnet-20241022" : 0, "grok-2-latest" : 0, "grok-2" : 0, "grok-beta" : 0, "grok-2-vision" : 0, "grok-2-vision-latest" : 0, "Qwen/Qwen2.5-0.5B-Instruct" : 0, "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B" : 0}
+              "gemini-2.0-flash-lite-preview-02-05": 4.01, "gemini-1.5-pro": 33, "claude-3-5-haiku-latest" : 0,
+              "claude-3-5-sonnet-20241022" : 0, "grok-2-latest" : 0, "grok-2" : 0,
+              "grok-beta" : 0, "grok-2-vision" : 0, "grok-2-vision-latest" : 10, "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B" : 0, "claude-3-7-sonnet-20250219" : 0, "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" : 0}
     if experiment.model_name not in quotas.keys():
         print(f"Error: {experiment.model_name} is not a valid model name.")
     model_name = transformer_name(experiment.model_name)
@@ -87,6 +89,7 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
                 correct += 0
                 seen += 1
             time.sleep(model_quota)
+            print(f"Checking row {index + 1}/{len(df)}: {row.to_dict()}")
         else:
             response, pred = experiment.process_sample(start_state, end_state)
             print("Processing!")
@@ -100,7 +103,7 @@ def run_experiment(experiment, ground_truth_csv_path, suffix=""):
         print(f"\rProcessing: {index + 1}/{len(df)}, accuracy:{correct / seen} ({correct} / {seen}, model: {experiment.model_name})", end="")
         new_df.to_csv(newdf_path, index=False)
         time.sleep(model_quota)
-    with open(os.path.join(save_dir, f'{experiment.model_name}{suffix}_accuracy.txt'), 'w') as f:
+    with open(os.path.join(save_dir, f'{model_name}{suffix}_accuracy.txt'), 'w') as f:
         f.write(f"Accuracy: {correct/seen}")
     return correct/seen
 def transformer_name(input):
@@ -109,19 +112,23 @@ def transformer_name(input):
     return match.group() if match else input
 if __name__ =="__main__":
     results = []
-    models = ["deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"]
+    models = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash-001",
+              "gemini-2.0-flash-lite-preview-02-05", "gemini-1.5-pro", "claude-3-5-haiku-latest",
+              "claude-3-5-sonnet-20241022", "grok-2-latest", "grok-2",
+              "grok-beta", "grok-2-vision", "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B", "claude-3-7-sonnet-20250219"]
     for model in models:
-        accuracy = run_experiment(transformersexperiment(model=model, prompt_func=get_basic_prompt), ground_truth_csv_path='ground_truth.csv')
+        accuracy = run_experiment(grokexperiment(model=model, prompt_function=get_basic_prompt), ground_truth_csv_path='ground_truth.csv')
         results.append((model, accuracy))
     # Plotting the results
     plt.rcParams.update({'font.size': 5})
     model_names = [result[0] for result in results]
     accuracies = [result[1] for result in results]
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(11, 7))
     plt.bar(model_names, accuracies, color=['red', 'blue', 'yellow', "green", "purple", "orange", "pink", "brown", "cyan", "magenta"])
-    plt.xlabel('Models', fontsize=12)
-    plt.ylabel('Accuracy', fontsize=12)
-    plt.title(f'Accuracy of Different LLMs in Blocks Benchmark', fontsize=15)
+    plt.xlabel('Models', fontsize=7)
+    plt.ylabel('Accuracy', fontsize=7)
+    plt.xticks(rotation=60)
+    plt.title(f'Accuracy of Different LLMs in Blocks Benchmark', fontsize=10)
     plt.ylim(0, 1)  # Assuming accuracy is between 0 and 1
     plt.show()
 

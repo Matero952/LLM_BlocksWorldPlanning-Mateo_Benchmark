@@ -2,6 +2,8 @@ import subprocess
 import pandas as pd
 from state_generator import generate_block_states
 import json
+import regex as re
+import os
 
 """
 Module for the ground truth generator.
@@ -124,19 +126,19 @@ def solve_pddl_plan(domain, problem):
     # Save domain and problem to temporary files
     domain_file = "./domain.pddl"
     problem_file = "./problem.pddl"
+    log_file_path = "./pddl_log.csv"
     with open(domain_file, "w") as f:
         f.write(domain)
     with open(problem_file, "w") as f:
         f.write(problem)
-    path_length = 0
-    actions = []
     # Run Pyperplan solver
     solver_command = ["pyperplan", "--heuristic", "hff", "--search", "astar", domain_file, problem_file]
     result = subprocess.run(solver_command, capture_output=True, text=True)
+    print(f"Result: {result.stdout}")
+
     out_file = "./problem.pddl.soln"
     outputs = {"pick": "None", "place": "None"}
     with open(out_file, "r") as file:
-        #This is to capture next best move
         line1 = file.readline()
         line1 = line1.replace("(", "").replace(")", "").split(" ")
         assert line1[0] == "unstack" or line1[0] == "pick-up" or line1[
@@ -151,23 +153,7 @@ def solve_pddl_plan(domain, problem):
             outputs["place"] = line2[2].strip()
         if line2[0] == "put-down":
             outputs["place"] = "table"
-        for line in file:
-            #This is for capturing path length
-            line = line.replace("(", "").replace(")", "").split(" ")
-            action_type = line[0]
-            if action_type in ["pick-up", "unstack"]:
-                    actions.append(f"pick {line[1].strip()}")
-            elif action_type == "stack":
-                actions.append(f"place {line[2].strip()}")
-            elif action_type == "put-down":
-                actions.append("place table")
-        path_length = len(actions)
-        # print(f"{line1}")
-        # print(f"{line2}")
-    print(f"Actions: {actions}")
-    print(f"Path length: {path_length}")
-    return outputs, path_length
-
+    return outputs, result
 
 def generate_ground_truth(blocks, csv_path):
     """
@@ -181,13 +167,29 @@ def generate_ground_truth(blocks, csv_path):
         for j, end_state in enumerate(ending_states):
             print(f"State {i + 1} {j + 1}: \n{start_state=}\n{end_state=}")
             domain_pddl, problem_pddl = generate_pddl(start_state, end_state)
-            best_move, path_length = solve_pddl_plan(domain_pddl, problem_pddl)
+            best_move, result = solve_pddl_plan(domain_pddl, problem_pddl)
             print(f"   {best_move}")
             print()
+            path_length = get_path_length(result)
             df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move), json.dumps(path_length)]
     df.to_csv(f"{csv_path}", index=False)
     return csv_path
-
+def get_path_length(result):
+    '''Little function I made to filter through PDDL logs and retrieve
+    plan length.
+    Returns: plan_length'''
+    found = False
+    result = (result.stdout.splitlines())
+    target_key = 'Plan length'
+    for indice in result:
+        if target_key in indice:
+            plan_length = (re.search(r'Plan length:\s*(\d+)', indice, re.IGNORECASE)).group(1)
+            found = True
+            return plan_length
+        else:
+            pass
+    if not found:
+        raise ValueError("Failed to find Plan length?!")
 
 if __name__ == "__main__":
     # Example start and end states:
