@@ -126,7 +126,6 @@ def solve_pddl_plan(domain, problem):
     # Save domain and problem to temporary files
     domain_file = "./domain.pddl"
     problem_file = "./problem.pddl"
-    log_file_path = "./pddl_log.csv"
     with open(domain_file, "w") as f:
         f.write(domain)
     with open(problem_file, "w") as f:
@@ -139,6 +138,7 @@ def solve_pddl_plan(domain, problem):
     out_file = "./problem.pddl.soln"
     outputs = {"pick": "None", "place": "None"}
     with open(out_file, "r") as file:
+        print(f"File: {file}")
         line1 = file.readline()
         line1 = line1.replace("(", "").replace(")", "").split(" ")
         assert line1[0] == "unstack" or line1[0] == "pick-up" or line1[
