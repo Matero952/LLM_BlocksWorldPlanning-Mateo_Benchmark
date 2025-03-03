@@ -5,7 +5,6 @@ import json
 import regex as re
 import os
 
-from state_tracker import pyplanpipeline
 
 """
 Module for the ground truth generator.
@@ -136,7 +135,6 @@ def solve_pddl_plan(domain, problem):
     solver_command = ["pyperplan", "--heuristic", "hff", "--search", "astar", domain_file, problem_file]
     result = subprocess.run(solver_command, capture_output=True, text=True)
     print(f"Result: {result.stdout}")
-
     out_file = "./problem.pddl.soln"
     outputs = {"pick": "None", "place": "None"}
     with open(out_file, "r") as file:
@@ -157,29 +155,26 @@ def solve_pddl_plan(domain, problem):
             outputs["place"] = "table"
     return outputs, result
 
-def generate_ground_truth(blocks, csv_path, full_plan_path, pyplan_pipe):
+def generate_ground_truth(blocks, csv_path):
     """
     Generates ground truth data for different block configurations and saves it to a CSV file.
     """
     starting_states = generate_block_states(blocks)
     ending_states = generate_block_states(blocks)
     df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move', 'path_length'])
-    full_plan_df = pd.DataFrame(columns=['start_state', 'end_state', 'possible_paths'])
     for i, start_state in enumerate(starting_states):
         # print(f"State {i + 1}: {start_state}")
         for j, end_state in enumerate(ending_states):
             print(f"State {i + 1} {j + 1}: \n{start_state=}\n{end_state=}")
             domain_pddl, problem_pddl = generate_pddl(start_state, end_state)
             best_move, result = solve_pddl_plan(domain_pddl, problem_pddl)
-            all_possible_paths = pyplan_pipe.pipe(domain_pddl, problem_pddl)
+            path_length = get_path_length(result)
             print(f"   {best_move}")
-            print(f"All possible paths: {all_possible_paths}")
             path_length = get_path_length(result)
             df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move), json.dumps(path_length)]
-            full_plan_df.loc[len(full_plan_df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(all_possible_paths)]
-    df.to_csv(f"{csv_path}", index=False)
-    full_plan_df.to_csv(f"{full_plan_path}", index=False)
-    return csv_path, full_plan_path
+            df.to_csv(f"{csv_path}", index=False)
+
+    return csv_path
 def get_path_length(result):
     '''Little function I made to filter through PDDL logs and retrieve
     plan length.
@@ -199,6 +194,5 @@ def get_path_length(result):
 
 if __name__ == "__main__":
     # Example start and end states:
-    pyplan_pipe = pyplanpipeline(ground_truth_file='./ground_truth.csv')
     blocks = ["red_block", "blue_block", "yellow_block"]
-    generate_ground_truth(blocks, "./ground_truth.csv", "./full_plan.csv", pyplan_pipe)
+    generate_ground_truth(blocks, "./ground_truth.csv")
