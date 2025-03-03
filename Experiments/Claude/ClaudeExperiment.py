@@ -41,7 +41,7 @@ if __name__ == "__main__":
     print(model)
     experiment = ClaudeExperiment(model, get_basic_prompt)
     df = pd.read_csv('../../ground_truth.csv')
-    row = df.sample(n=1).iloc[0]
+    row = df.sample(n=2).iloc[0]
     start_state = json.loads(row['start_state'])
     end_state = json.loads(row['end_state'])
     label = json.loads(row['next_best_move'])
