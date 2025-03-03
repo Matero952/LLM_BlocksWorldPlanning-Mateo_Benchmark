@@ -9,7 +9,7 @@ import pandas as pd
 class OperatorGetter:
     def __init__(self):
         pass
-    def action_to_operator(self, state, action):
+    def action_to_operator(self, state, action, output_file) -> None:
         '''Function to take in an action and convert to operator
         because editing pyperplan library was too difficult.'''
         #Example action: "{""pick"": ""None"", ""place"": ""None""}"
@@ -29,33 +29,39 @@ class OperatorGetter:
             else:
                 unstackable.append(key)
                 assert key not in pick_upable
-        #So now we have unstackable and pickupable blocks
         assert type(action) == str, 'Action must be a string(1)'
-        formed_action = re.sub(r'(\w+):', r"'\1':", action)
+        formed_action = re.sub(r'(\w+): (\w+)', r"'\1': '\2'", action)
         if not formed_action:
             raise TypeError('Whoopsies')
         assert type(formed_action) == str, 'Action must be a string(2)'
         formed_action = ast.literal_eval(formed_action)
         assert type(formed_action) == dict, 'Action must be a dict(1)'
-        print(f"{formed_action['pick']}, {formed_action['place']}")
+        assert formed_action['pick'] != formed_action['place']
         if formed_action['pick'] in unstackable:
             print(f"{formed_action['pick']} is unstackable")
+        elif formed_action['pick'] in pick_upable:
+            print(f"{formed_action['pick']} is pick_upable")
         elif formed_action['place'] in pick_upable:
             print(f"{formed_action['place']} is pick_upable")
         else:
-            raise ValueError(f"Action must be pick_upable or pick_upable")
-        #For pick, its either 'unstack' or 'pick-up'
-        #For place, its either 'stack' or 'put-down'
-        #TODO Implement if pick and place are none return nothing i think
-
-
-
+            raise ValueError(f"Action must be unstackable or pick_upable")
+        print(f"Unstackable: {unstackable}, pick_upable: {pick_upable}")
+        with open(output_file, 'w') as f:
+            if formed_action['pick'] in pick_upable:
+                f.write(f"(pick-up {formed_action['pick']})")
+            else:
+                f.write(f"\n(unstack {formed_action['pick']})" + ')')
+            if formed_action['place'] == 'table':
+                f.write(f"\n(put-down {formed_action['pick']}" +')')
+            else:
+                f.write(f"\n(stack {formed_action['pick']} {formed_action['place']}" + ')')
+        return None
 
 if __name__=='__main__':
-    example_action = "{""pick"": ""None"", ""place"": ""None""}"
+    example_action = "{""pick"": ""yellow_block"", ""place"": ""table""}"
     example_state = "{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""pick"": ""None"", ""place"": ""None""}","""0"""
     op = OperatorGetter()
-    op.action_to_operator(example_state ,example_action)
+    op.action_to_operator(example_state ,example_action, 'hehe.pddl.soln')
 
 
 
