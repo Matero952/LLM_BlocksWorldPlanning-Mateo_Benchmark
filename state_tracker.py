@@ -2,19 +2,19 @@ import argparse
 import ast
 import subprocess
 import csv
+from typing import FrozenSet
+
 import regex as re
 import pandas as pd
+from pyperplan.task import Operator
+from pyperplan.pddl.parser import Parser
 
-#TODO Make this adapatable for path planning and action availability.
 class OperatorGetter:
     def __init__(self):
         pass
-    def action_to_operator(self, state, action, output_file) -> None:
+    def format_action(self, state, action, output_file, domain_file=None, problem_file=None) -> Operator:
         '''Function to take in an action and convert to operator
         because editing pyperplan library was too difficult.'''
-        #Example action: "{""pick"": ""None"", ""place"": ""None""}"
-        #Example state: "{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}"
-        #State filtering first
         formed_state = state[0]
         formed_state = (re.sub(r'(\w+):\s*(\w+)', r"'\1': '\2'", formed_state))
         formed_state = ast.literal_eval(formed_state)
@@ -45,6 +45,7 @@ class OperatorGetter:
             print(f"{formed_action['place']} is pick_upable")
         else:
             raise ValueError(f"Action must be unstackable or pick_upable")
+        #TODO Fix this monstrosity
         print(f"Unstackable: {unstackable}, pick_upable: {pick_upable}")
         with open(output_file, 'w') as f:
             if formed_action['pick'] in pick_upable:
@@ -55,86 +56,51 @@ class OperatorGetter:
                 f.write(f"\n(put-down {formed_action['pick']}" +')')
             else:
                 f.write(f"\n(stack {formed_action['pick']} {formed_action['place']}" + ')')
-        return None
+        preconditions, add_effects, del_effects = self.parse_pddl(domain_file, problem_file, output_file)
+        operator = Operator(name=formed_action, preconditions=preconditions, add_effects=add_effects, del_effects=del_effects)
+        print(f"Operator: {operator}")
+        return operator
+    def parse_pddl(self, domain_file, prob_file, formatted_action_file) -> tuple[frozenset, frozenset, frozenset] or None:
+        '''Function to parse formatted_action_file pddl and retrieve important
+        stuff for Operator object.'''
+        assert (type(domain_file) == str and type(prob_file) == str and
+                type(formatted_action_file) == str)
+        #Files must be strings
+        with open(formatted_action_file, 'r') as f:
+            first_line = f.readline().strip()
+            found_action = re.search(r"\(\s*(\S+)", first_line).group(1)
+            print(f"Action1: {found_action}")
+            #Extracting action from format_action
+            if not found_action:
+                raise ValueError("Action isnt valid.")
+            #Action must be valid yk
+        parser = Parser(domain_file, prob_file)
+        domain_parsed = parser.parse_domain(read_from_file=True)
+        problem_parsed = parser.parse_problem(dom=domain_parsed, read_from_file=True)
+        #Self-explanatory?!
+        for action_name, action in domain_parsed.actions.items():
+            if found_action != action_name:
+                continue
+                #Skips to next
+            else:
+                add_effect = frozenset(action.effect.addlist)
+                del_effect = frozenset(action.effect.dellist)
+                precondition = frozenset(action.precondition)
+                #Pyperplan expecting hashable, immutable type, so I just use a frozenset.
+                return precondition, add_effect, del_effect
+                #Return values are used for making Operator object.
+class StateTracker(OperatorGetter):
+    def __init__(self):
+        super().__init__()
+    def apply_operator(self, state, operator) -> str:
+        #TODO Read documentation on this.
+        return 'None'
+
+
+
 
 if __name__=='__main__':
-    example_action = "{""pick"": ""yellow_block"", ""place"": ""table""}"
+    example_action = "{""pick"": ""yellow_block"", ""place"": ""red_block""}"
     example_state = "{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""pick"": ""None"", ""place"": ""None""}","""0"""
     op = OperatorGetter()
-    op.action_to_operator(example_state ,example_action, 'hehe.pddl.soln')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# class pyplanpipeline:
-#     def __init__(self, ground_truth_file):
-#         self.ground_truth_file = ground_truth_file
-#     def pipe(self, domain_file, problem_file):
-#         pyplan_command = ["pyperplan", "--heuristic", "blind", "--search", "bfs", domain_file, problem_file]
-#         #'astar' is replaced by 'bfs' to search all valid paths
-#         #'hff' is also replaced 'blind' to treat all states equally
-#         result = (subprocess.run(pyplan_command, capture_output=True, text=True)).stdout
-#         print(f"result: {result}")
-#         filtered_result = self.retrieve_from_log(result, r"^.*?Possible moves:(.*)$", target_key="Possible moves")
-#         print(f"Filtered_result: {filtered_result}")
-#         return filtered_result
-#     def retrieve_from_log(self, result, regex, target_key):
-#         result = result.splitlines()
-#         print(f"Result: {result}")
-#         found = False
-#         for indice in result:
-#             if target_key in indice:
-#                 target = (re.search(regex, indice, re.IGNORECASE)).group(1)
-#                 found = True
-#                 return target
-#             else:
-#                 pass
-#         if not found:
-#             raise ValueError(f"Failed to find {target_key}")
-#
-# class StateTracker(pyplanpipeline):
-#     def __init__(self, domain_file, ground_truth_file):
-#         super().__init__(ground_truth_file)
-#         self.domain_file = domain_file
-#         self.ground_truth_file = ground_truth_file
-#     def available_action(self, index, action):
-#         available_actions = []
-#         with open(self.ground_truth_file) as ground_truth_file:
-#             data = pd.read_csv(ground_truth_file)
-#             data = data.to_dict('records')
-#             entry = data[index]
-#             action = ast.literal_eval(action)
-#             print(f"data: {data}, "
-#                   f"entry: {entry}, "
-#                   f"action: {action}")
-# if __name__=="__main__":
-#     # statetracker = StateTracker("domain.pddl", "problem.pddl", "ground_truth.csv")
-#     # example_line = "{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""pick"": ""None"", ""place"": ""None""}","""0"""
-#     # example_action = "{'pick': 'yellow_block', 'place': 'yellow_block'}"
-#     # statetracker.available_action(2, example_action)
-#     pp = pyplanpipeline(ground_truth_file='ground_truth.csv')
-#     result = pp.pipe("./domain.pddl", "./problem.pddl")
-#     print(f"type: {type(result)}")
-#     # filtered_result = pp.retrieve_from_log(result, r"Possible moves:\s*(\[[^\]]*\])", target_key="Possible moves")
-#     # print(f"filtered_result: {filtered_result}")
-
-
-
-
-
-
-
-
-
+    op.format_action(domain_file='domain.pddl', problem_file='problem.pddl', state=example_state, action=example_action, output_file='hehe.pddl.soln')
