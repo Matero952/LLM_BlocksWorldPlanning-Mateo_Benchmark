@@ -164,8 +164,8 @@ class Actionperator:
         return state_prime
 
 if __name__=='__main__':
-    example_action = "{""pick"": ""yellow_block"", ""place"": ""red_block""}"
-    example_state = "{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""red_block""}","{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""pick"": ""None"", ""place"": ""None""}","""0"""
+    example_action = "{""pick"": ""None"", ""place"": ""None""}"
+    example_state = "{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""red_block"": ""table"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""pick"": ""None"", ""place"": ""None""}","""0"""
     ao = Actionperator(state=example_state, action=example_action, domain_file='domain.pddl',
                         problem_file='problem.pddl', formatted_action_file='hehe.pddl.soln')
     state_preconditions = ao.get_state_preconditions()
