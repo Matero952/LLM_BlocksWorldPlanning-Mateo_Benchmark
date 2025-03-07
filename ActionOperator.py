@@ -8,7 +8,7 @@ class Action:
         self.csv_index = csv_index
         self.pick_action = None
         self.place_action = None
-        self.names = tuple[self.pick_action, self.place_action]
+        self.names = (self.pick_action, self.place_action)
         self.output_path = output_path
     def get_action(self, csv_path):
         with open(csv_path, 'r') as f:
@@ -20,6 +20,7 @@ class Action:
             reader = csv.reader(f)
             rows = list(reader)
             return rows[self.csv_index]
+    #Helper function.
     def write_action_operator(self, row, action) -> None:
         start_state = ast.literal_eval(row[0])
         end_state = ast.literal_eval(row[1])
@@ -59,10 +60,11 @@ class ActionOperator(Action):
         self.domain_file = domain_file
         self.problem_file = problem_file
         self.parser = Parser(domain_file, problem_file)
-    def get_action_preconditions(self):
+
+    def get_action_preconditions(self, pick_action=False):
         domain_parsed = self.parser.parse_domain(read_from_file=True)
         for action_name, dom_action in domain_parsed.actions.items():
-            if action.pick_action != action_name:
+            if (self.action.pick_action != action_name) if pick_action else (self.action.place_action != action_name):
                 continue
                 # Skips to next
             else:
@@ -72,16 +74,7 @@ class ActionOperator(Action):
                 # Pyperplan expecting hashable, immutable type, so I just use a frozenset.
                 return precondition, add_effect, del_effect
 
-
-
-
-
-
-
-
-
-
-
+#TODO Make pick and place operator functions.
 if __name__ == "__main__":
     action = Action(csv_index=10)
     print((action.get_action('ground_truth.csv')))
