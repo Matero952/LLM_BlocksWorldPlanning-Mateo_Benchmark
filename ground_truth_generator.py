@@ -153,12 +153,15 @@ def solve_pddl_plan(domain, problem):
             outputs["place"] = line2[2].strip()
         if line2[0] == "put-down":
             outputs["place"] = "table"
+    print(f"Output: {outputs}")
+    print(f"Result: {result.stdout}")
     return outputs, result
 
 def generate_ground_truth(blocks, csv_path):
     """
     Generates ground truth data for different block configurations and saves it to a CSV file.
     """
+
     starting_states = generate_block_states(blocks)
     ending_states = generate_block_states(blocks)
     df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move', 'path_length'])
