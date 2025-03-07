@@ -109,11 +109,14 @@ class ActionOperator(Action):
             #Adding fixed element
         return action_preconditions
 
-
-
-
-
-
+    def fulfilled_preconditions(self, pick_action: bool):
+        state_preconditions, action_preconditions = self.get_state_preconditions(), self.substitute_params(pick_action)
+        for precondition in action_preconditions:
+            if precondition not in state_preconditions:
+                return False
+            else:
+                continue
+        return True
 
 #TODO Make pick and place operator functions.
 if __name__ == "__main__":
