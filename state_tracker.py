@@ -7,7 +7,6 @@ from pyperplan.pddl.parser import Parser, Predicate
 #TODO Parameterize '?y'
 class ActionOperator:
     """Taking better name suggestions please."""
-
     def __init__(self, state: tuple, action: str, domain_file: str, problem_file: str, formatted_action_file: str) -> None:
         self.state = state
         self.action = action
@@ -102,15 +101,15 @@ class ActionOperator:
         #is just our other block
         op_bindings = {}
         x_var, y_var = self.get_action_information()
-        op_bindings[f'{b1}'] = x_var
-        op_bindings[f'{b2}'] = y_var
+        op_bindings[b1] = x_var
+        op_bindings[b2] = y_var
         #Variables we found earlier.
         op_bindings['[object]'] = 'object'
         print(f"Operator bindings: {op_bindings}")
         return op_bindings
 
     @staticmethod
-    def sort_preconds(action_precond: Predicate, state_precond: Predicate):
+    def sort_preconds(action_precond, state_precond):
         action_predicate_list = list(action_precond)
         action_predicate_list_sorted = sorted(action_predicate_list, key=lambda x: x.name)
         state_predicate_list = list(state_precond)
@@ -118,22 +117,62 @@ class ActionOperator:
         print(f"action_predicate_list_sorted: {action_predicate_list_sorted}")
         print(f"state_predicate_list_sorted: {state_predicate_list_sorted}")
         return action_predicate_list_sorted, state_predicate_list_sorted
-
+    def remove_parameters(self, pa, pb, pc) -> list:
+        #Goal here is to plug in values for sorted_action_precons
+        print(f"pa: {pa}, pb: {pb}, pc: {pc}")
+        action_preconditions, _, _ = self.get_domain_information()
+        sorted_action_precons, _ = self.sort_preconds(action_preconditions, self.get_state_preconditions())
+        op_bindings = self.get_operator_bindings(pa, pb)
+        print(f"Operator bindings: {op_bindings}")
+        assert type(sorted_action_precons) == list
+        for index, entry in enumerate(sorted_action_precons):
+            print(f"entry: {entry}, type: {type(entry)}")
+            if pa in str(entry):
+                sorted_action_precons[index] = str(entry).replace("\\", "")
+                print(f"Sorting action_precons[index]: {sorted_action_precons[index]}, type; {type(sorted_action_precons[index])}")
+                sorted_action_precons[index] = sorted_action_precons[index].replace(f"{pa}", f"{op_bindings[pa]}")
+                print(f"Sorted action_precons[index]: {sorted_action_precons[index]}")
+            if pb in str(entry):
+                sorted_action_precons[index] = str(entry).replace("\\", "")
+                print(
+                    f"Sorting action_precons[index]: {sorted_action_precons[index]}, type; {type(sorted_action_precons[index])}")
+                sorted_action_precons[index] = sorted_action_precons[index].replace(f"{pb}", f"{op_bindings[pb]}")
+                print(f"Sorted action_precons[index]: {sorted_action_precons[index]}")
+            if pc in str(entry):
+                sorted_action_precons[index] = str(entry).replace("\\", "")
+                print(
+                    f"Sorting action_precons[index]: {sorted_action_precons[index]}, type; {type(sorted_action_precons[index])}")
+                sorted_action_precons[index] = sorted_action_precons[index].replace(f"{pc}", f"{op_bindings[pc]}")
+                print(f"Sorted action_precons[index]: {sorted_action_precons[index]}")
+        print(f"Sorted action_precons: {sorted_action_precons}")
+        return sorted_action_precons
     def plug_parameters(self, action_predcon: list, bdict: dict, pA, pB, pC):
         """Meant to be called on a single string."""
         #Just add more variables for future, more complicated worlds.
+        action_predcon_sorted, _ = self.sort_preconds(action_predcon)
+        pA = pA.replace("\\", "")
+        pB = pB.replace("\\", "")
+        pC = pC.replace("\\", "")
+        print(f"PA: {pA}")
+        print(f"Typel actionpredcon: {type(action_predcon)}")
         deparamed_action_preda = re.sub(pA, bdict[pA], action_predcon)
         deparamed_action_predb = re.sub(pB, bdict[pB], deparamed_action_preda)
         deparamed_action_predc = re.sub(pC, bdict[pC], deparamed_action_predb)
         print(f"deparamed_action_pred: {deparamed_action_predc}")
         return deparamed_action_predc
+
+
+
+
+
     def get_missing_preconds(self, action_preconditions, state_preconditions):
         numb_precons = len(action_preconditions)
         cleared_precons = set()
         missing = set()
         #Using a set for no duplicate values.
         for index, precon in enumerate(action_preconditions):
-            action_preconditions[index] = self.plug_parameters(precon, self.get_operator_bindings('?x', '?y'), r"|?x", r"\?y", r"\object")
+            print(f"Type:heeh {type(precon)}")
+            action_preconditions[index] = self.plug_parameters(precon, self.get_operator_bindings('?x', '?y'), r"\?x", r"\?y", r"\object")
         #Fix action preconditions
         for action_precondition in action_preconditions:
             if action_precondition not in state_preconditions:
@@ -163,9 +202,11 @@ if __name__=='__main__':
     example_state = "{""red_block"": ""blue_block"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""red_block"": ""yellow_block"", ""blue_block"": ""table"", ""yellow_block"": ""table""}","{""pick"": ""None"", ""place"": ""None""}","""0"""
     ao = ActionOperator(state=example_state, action=example_action, domain_file='domain.pddl',
                         problem_file='problem.pddl', formatted_action_file='hehe.pddl.soln')
-    state = ao.get_state_preconditions()
-    predicates, _, _ = ao.get_domain_information()
-    op_bindings = ao.get_operator_bindings('?x', "?y")
+    state_preconditions = ao.get_state_preconditions()
+    action_predicates, _, _ = ao.get_domain_information()
+    action_predicates, state_predicates = ao.sort_preconds(action_predicates, state_preconditions)
+    ao.remove_parameters('?x', '?y', '[object]')
+
 
 
 
