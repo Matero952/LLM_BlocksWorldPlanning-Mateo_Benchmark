@@ -1,6 +1,7 @@
 import ast
 import csv
 from pyperplan.pddl.parser import Parser
+from ground_truth_generator import generate_pddl, solve_pddl_plan
 
 class Action:
     def __init__(self, csv_index, output_path):
@@ -62,7 +63,7 @@ class Action:
 
 
     def get_operator_bindings(self) -> dict:
-        op_bindings = {'?x' : self.action['pick'], '?y' : self.action['place']}
+        op_bindings = {'?x' : self.action.action['pick'], '?y' : self.action.action['place']}
         return op_bindings
 
 class ActionOperator(Action):
@@ -86,13 +87,19 @@ class ActionOperator(Action):
                 precondition = frozenset(dom_action.precondition)
                 # Pyperplan expecting hashable, immutable type, so I just use a frozenset.
                 return precondition, add_effect, del_effect
+        return frozenset(), frozenset(), frozenset()
+        #Happens if pick action is None. Preconditions are essentially met.
 
     def get_state_preconditions(self):
         #Parsing non-parameterized state preconditions
         domain_parsed = self.parser.parse_domain(read_from_file=True)
         problem_parsed = self.parser.parse_problem(domain_parsed, read_from_file=True)
         #Parses domain for problem
-        preconditions = frozenset(problem_parsed.initial_state)
+        preconditions = set(problem_parsed.initial_state)
+        for precondition in preconditions:
+            preconditions.remove(precondition)
+            preconditions.add(str(precondition))
+        print(f"State preconditions: {preconditions}")
         return preconditions
 
     def substitute_params(self, pick_action: bool):
@@ -105,22 +112,31 @@ class ActionOperator(Action):
             precondition = str(precondition).replace('?x', self.get_operator_bindings()['?x'])
             precondition = str(precondition).replace('?y', self.get_operator_bindings()['?y'])
             precondition = str(precondition).replace('[object]', 'object')
-            action_preconditions.add(precondition)
+            action_preconditions.add(ast.literal_eval(precondition)) if type(precondition) is not str else action_preconditions.add(precondition)
             #Adding fixed element
+        print(f"new action_preconditions: {action_preconditions}")
         return action_preconditions
 
     def fulfilled_preconditions(self, pick_action: bool):
+        #Checks if our state fulfills and necessary action preconditions
         state_preconditions, action_preconditions = self.get_state_preconditions(), self.substitute_params(pick_action)
         for precondition in action_preconditions:
             if precondition not in state_preconditions:
+                print(f"Missing precondition: {precondition}")
+                #Necessary preconditions not met
                 return False
             else:
                 continue
+        #Necessary preconditions met
         return True
 
 #TODO Make pick and place operator functions.
 if __name__ == "__main__":
-    action = Action(csv_index=10, output_path='hehe.pddl.soln')
+
+    action = Action(csv_index=5, output_path='hehe.pddl.soln')
     print((action.get_action('ground_truth.csv')))
     action.write_action_operator(action.get_row('ground_truth.csv'), action.get_action('ground_truth.csv'))
-
+    actionop = ActionOperator(5, 'hehe.pddl', action, 'domain.pddl', 'problem.pddl')
+    print(actionop.get_state_preconditions())
+    print(actionop.substitute_params(pick_action=True))
+    print(actionop.fulfilled_preconditions(True))

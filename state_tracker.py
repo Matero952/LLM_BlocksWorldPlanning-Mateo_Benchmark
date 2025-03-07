@@ -3,6 +3,10 @@ import regex as re
 from pyperplan.task import Operator
 from pyperplan.pddl.parser import Parser, Predicate
 #PLEASE NOTE THIS FILE IS DEPRECATED AND WILL BE REMOVED SHORTLY
+#MAIN REASONS FOR DEPRECATION:
+#DIFFICULT TO MAINTAIN AND FOLLOW
+#OOP IS TERRIBLE HERE
+#ACTIONOPERATOR IS BETTER
 class Actionperator:
     """Taking better name suggestions please."""
     def __init__(self, state: tuple, action: str, domain_file: str, problem_file: str, formatted_action_file: str) -> None:
