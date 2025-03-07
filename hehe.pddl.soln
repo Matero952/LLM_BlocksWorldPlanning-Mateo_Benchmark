@@ -1,2 +1,2 @@
-(unstack red_block))
-(stack red_block yellow_block)
+(unstack None))
+(stack None None)
