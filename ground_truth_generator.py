@@ -176,7 +176,7 @@ def generate_ground_truth(blocks, csv_path):
             df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move), json.dumps(path_length)]
             df.to_csv(f"{csv_path}", index=False)
             counter += 1
-            if counter >= 5:
+            if counter >= 15:
                 breakpoint()
             else:
                 pass
