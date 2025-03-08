@@ -1,2 +1,2 @@
-(pick-up yellow_block)
-(stack yellow_block red_block)
+pick-up blue_block
+stack blue_block red_block

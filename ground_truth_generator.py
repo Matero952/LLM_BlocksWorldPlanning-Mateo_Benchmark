@@ -134,7 +134,6 @@ def solve_pddl_plan(domain, problem):
     # Run Pyperplan solver
     solver_command = ["pyperplan", "--heuristic", "hff", "--search", "astar", domain_file, problem_file]
     result = subprocess.run(solver_command, capture_output=True, text=True)
-    print(f"Result: {result.stdout}")
     out_file = "./problem.pddl.soln"
     outputs = {"pick": "None", "place": "None"}
     with open(out_file, "r") as file:
@@ -153,12 +152,15 @@ def solve_pddl_plan(domain, problem):
             outputs["place"] = line2[2].strip()
         if line2[0] == "put-down":
             outputs["place"] = "table"
+    print(f"Output: {outputs}")
+    print(f"Result: {result.stdout}")
     return outputs, result
 
 def generate_ground_truth(blocks, csv_path):
     """
     Generates ground truth data for different block configurations and saves it to a CSV file.
     """
+    counter = 0
     starting_states = generate_block_states(blocks)
     ending_states = generate_block_states(blocks)
     df = pd.DataFrame(columns=['start_state', 'end_state', 'next_best_move', 'path_length'])
@@ -173,6 +175,11 @@ def generate_ground_truth(blocks, csv_path):
             path_length = get_path_length(result)
             df.loc[len(df)] = [json.dumps(start_state), json.dumps(end_state), json.dumps(best_move), json.dumps(path_length)]
             df.to_csv(f"{csv_path}", index=False)
+            counter += 1
+            if counter >= 5:
+                breakpoint()
+            else:
+                pass
 
     return csv_path
 def get_path_length(result):
