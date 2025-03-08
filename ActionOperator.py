@@ -1,7 +1,5 @@
 import ast
 import csv
-
-
 from pyperplan.pddl.parser import Parser
 from pyperplan.task import Operator
 
@@ -99,11 +97,17 @@ class ActionOperator(Action):
         #Parsing non-parameterized state preconditions
         domain_parsed = self.parser.parse_domain(read_from_file=True)
         problem_parsed = self.parser.parse_problem(domain_parsed, read_from_file=True)
+
         #Parses domain for problem
         updated_preconditions = set()
         preconditions = set(problem_parsed.initial_state)
         for precondition in preconditions:
-            updated_preconditions.add(str(precondition))
+            if precondition not in self.action_preconditions:
+                # Remove unnecessary state preconditions for pyperplan
+                continue
+                #skip
+            else:
+                updated_preconditions.add(str(precondition))
         return updated_preconditions
 
     def substitute_params(self, pick_action: bool):
@@ -162,13 +166,14 @@ class StateTracker(ActionOperator):
         self.pick_action = pick_action
         self.domain_file = domain_file
     def apply_operator(self):
-        state_preconditions, _, _ = self.get_state_preconditions()
+        state_preconditions = self.get_state_preconditions()
         available = self.action_operator.fulfilled_preconditions(self.pick_action)
         if not available:
             print(f"Operator not applicable.")
             return None
         else:
             self.action_operator.action_operator.apply(state_preconditions)
+            return True
 
 
 if __name__ == "__main__":
@@ -177,5 +182,5 @@ if __name__ == "__main__":
     action.write_action_operator(action.get_row('ground_truth.csv'), action.get_action('ground_truth.csv'))
     actionop = ActionOperator(15, 'hehe.pddl', action, 'domain.pddl', 'problem.pddl', True)
     st= StateTracker(action, actionop, problem_file='problem.pddl', pick_action=True, domain_file='domain.pddl')
-    print(actionop.fulfilled_preconditions(True))
+    # print(actionop.fulfilled_preconditions(True))
     print(st.apply_operator())
