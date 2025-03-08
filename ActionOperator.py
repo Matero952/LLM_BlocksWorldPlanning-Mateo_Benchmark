@@ -104,6 +104,7 @@ class ActionOperator(Action):
         return updated_preconditions
 
     def substitute_params(self, pick_action: bool):
+        #TODO Fix this function please ):
         action_preconditions, add_effects, del_effects = self.get_action_preconditions(pick_action)
         action_preconditions = set(action_preconditions)
         add_effects = set(add_effects)
@@ -147,9 +148,7 @@ class ActionOperator(Action):
         #Necessary preconditions met
         return True
 
-#TODO Make pick and place operator functions.
 if __name__ == "__main__":
-
     action = Action(csv_index=5, output_path='hehe.pddl.soln')
     print((action.get_action('ground_truth.csv')))
     action.write_action_operator(action.get_row('ground_truth.csv'), action.get_action('ground_truth.csv'))
