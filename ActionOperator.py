@@ -99,18 +99,17 @@ class ActionOperator(Action):
         #Parsing non-parameterized state preconditions
         domain_parsed = self.parser.parse_domain(read_from_file=True)
         problem_parsed = self.parser.parse_problem(domain_parsed, read_from_file=True)
-
         #Parses domain for problem
         updated_preconditions = set()
         preconditions = set(problem_parsed.initial_state)
+        print(f"Preconditionsssssss: {preconditions}")
+        print(f"SELFACTION: {self.action_preconditions}")
         for precondition in preconditions:
-            if precondition not in self.action_preconditions:
-                # Remove unnecessary state preconditions for pyperplan
-                continue
-                #skip
-            else:
-                updated_preconditions.add(str(precondition))
+            updated_preconditions.add(str(precondition))
+            continue
+        updated_preconditions = updated_preconditions & self.action_preconditions
         return updated_preconditions
+        #Only return preconditions shared in the lists.
 
     def substitute_params(self, pick_action: bool):
         #TODO Fix this function please ):
@@ -179,7 +178,7 @@ class StateTracker(ActionOperator):
             new_state = (new_state - self.del_effects) | self.add_effects
             # new_state = new_state.difference_update(self.del_effects)
             # new_state = new_state.update(self.add_effects)
-            print(f"Operator succesfully applied.")
+            print(f"Operator successfully applied.")
             print(f"{state_preconditions} ------> {new_state}")
             return new_state
 
