@@ -74,7 +74,9 @@ class ActionOperator(Action):
         self.problem_file = problem_file
         self.parser = Parser(domain_file, problem_file)
         self.action_preconditions, self.add_effects, self.del_effects = self.substitute_params(pick_action)
-        self.action_operator = Operator(self.action.names, self.action_preconditions, self.add_effects, self.del_effects)
+        # Operator.__init__(self, self.action.names, self.action_preconditions, self.add_effects, self.del_effects)
+        self.action_operator = Operator(name=self.action.names, preconditions=self.action_preconditions, add_effects=self.add_effects, del_effects=self.del_effects)
+        available = self.action_operator.applicable(self.get_state_preconditions())
         # print(f"Action operator: {self.action_operator}")
         #Uncomment for Pyperplan operator feedback.
     def get_action_preconditions(self, pick_action=False):
@@ -145,7 +147,6 @@ class ActionOperator(Action):
         action_preconditions, _, _ = self.substitute_params(pick_action)
         print(f"state_preconditions: {state_preconditions}")
         print(f"action_preconditions: {action_preconditions}")
-        available = self.action_operator.applicable(state_preconditions)
         #'Just in case' pyperplan compatibility check.
         for precondition in action_preconditions:
             if precondition not in state_preconditions:
@@ -155,7 +156,7 @@ class ActionOperator(Action):
             else:
                 continue
         #Necessary preconditions met
-        return True if available else False
+        return True
 
 class StateTracker(ActionOperator):
     def __init__(self, action: Action, action_operator: ActionOperator, problem_file: str, pick_action: bool, domain_file):
@@ -165,22 +166,27 @@ class StateTracker(ActionOperator):
         self.problem_file = problem_file
         self.pick_action = pick_action
         self.domain_file = domain_file
-    def apply_operator(self):
+        self.action_preconditions, self.add_effects, self.del_effects = self.substitute_params(pick_action)
+    def __apply_operator__(self):
         state_preconditions = self.get_state_preconditions()
-        available = self.action_operator.fulfilled_preconditions(self.pick_action)
+        available = self.fulfilled_preconditions(pick_action=self.pick_action)
         if not available:
-            print(f"Operator not applicable.")
-            return None
+            print(f"Operator not applicable: {self.action_operator.action_operator}")
+            print(f"State_preconditions: {state_preconditions}")
+            return state_preconditions
         else:
-            self.action_operator.action_operator.apply(state_preconditions)
-            return True
-
+            new_state = state_preconditions.copy()
+            new_state = (new_state - self.del_effects) | self.add_effects
+            # new_state = new_state.difference_update(self.del_effects)
+            # new_state = new_state.update(self.add_effects)
+            print(f"Operator succesfully applied.")
+            print(f"{state_preconditions} ------> {new_state}")
+            return new_state
 
 if __name__ == "__main__":
-    action = Action(csv_index=15, output_path='hehe.pddl.soln')
+    action = Action(csv_index=13, output_path='hehe.pddl.soln')
     print((action.get_action('ground_truth.csv')))
     action.write_action_operator(action.get_row('ground_truth.csv'), action.get_action('ground_truth.csv'))
-    actionop = ActionOperator(15, 'hehe.pddl', action, 'domain.pddl', 'problem.pddl', True)
+    actionop = ActionOperator(13, 'hehe.pddl', action, 'domain.pddl', 'problem.pddl', True)
     st= StateTracker(action, actionop, problem_file='problem.pddl', pick_action=True, domain_file='domain.pddl')
-    # print(actionop.fulfilled_preconditions(True))
-    print(st.apply_operator())
+    print(st.__apply_operator__())
