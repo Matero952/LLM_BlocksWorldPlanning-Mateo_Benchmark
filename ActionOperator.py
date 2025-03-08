@@ -1,7 +1,7 @@
 import ast
 import csv
 from pyperplan.pddl.parser import Parser
-from ground_truth_generator import generate_pddl, solve_pddl_plan
+from pyperplan.task import Operator
 
 class Action:
     def __init__(self, csv_index, output_path):
@@ -67,12 +67,14 @@ class Action:
         return op_bindings
 
 class ActionOperator(Action):
-    def __init__(self, csv_index, output_path, action: Action, domain_file, problem_file):
+    def __init__(self, csv_index, output_path, action: Action, domain_file, problem_file, pick_action: bool):
         super().__init__(csv_index, output_path)
         self.action = action
         self.domain_file = domain_file
         self.problem_file = problem_file
         self.parser = Parser(domain_file, problem_file)
+        self.action_preconditions, self.add_effects, self.del_effects = self.substitute_params(pick_action)
+        self.action_operator = Operator(self.action.names, self.action_preconditions, self.add_effects, self.del_effects)
 
     def get_action_preconditions(self, pick_action=False):
         #Parsing parameterized action preconditions
@@ -95,31 +97,46 @@ class ActionOperator(Action):
         domain_parsed = self.parser.parse_domain(read_from_file=True)
         problem_parsed = self.parser.parse_problem(domain_parsed, read_from_file=True)
         #Parses domain for problem
+        updated_preconditions = set()
         preconditions = set(problem_parsed.initial_state)
         for precondition in preconditions:
-            preconditions.remove(precondition)
-            preconditions.add(str(precondition))
-        print(f"State preconditions: {preconditions}")
-        return preconditions
+            updated_preconditions.add(str(precondition))
+        return updated_preconditions
 
     def substitute_params(self, pick_action: bool):
-        action_preconditions, _, _ = self.get_action_preconditions(pick_action)
+        action_preconditions, add_effects, del_effects = self.get_action_preconditions(pick_action)
         action_preconditions = set(action_preconditions)
+        add_effects = set(add_effects)
+        del_effects = set(del_effects)
         #Overwrite action_preconditions from frozenset -> set
+        updated_preconditions = set()
+        updated_add_effects = set()
+        updated_del_effects = set()
         for precondition in action_preconditions:
-            action_preconditions.remove(precondition)
-            #Removing old element from set
             precondition = str(precondition).replace('?x', self.get_operator_bindings()['?x'])
             precondition = str(precondition).replace('?y', self.get_operator_bindings()['?y'])
             precondition = str(precondition).replace('[object]', 'object')
-            action_preconditions.add(ast.literal_eval(precondition)) if type(precondition) is not str else action_preconditions.add(precondition)
+            updated_preconditions.add(ast.literal_eval(precondition)) if type(precondition) is not str else updated_preconditions.add(precondition)
             #Adding fixed element
         print(f"new action_preconditions: {action_preconditions}")
-        return action_preconditions
+        for add_effect in add_effects:
+            add_effect = str(add_effect).replace('?x', self.get_operator_bindings()['?x'])
+            add_effect = str(add_effect).replace('?y', self.get_operator_bindings()['?y'])
+            add_effect = str(add_effect).replace('[object]', 'object')
+            updated_add_effects.add(ast.literal_eval(add_effect)) if type(add_effect) is not str else updated_add_effects.add(add_effect)
+        for del_effect in del_effects:
+            del_effect = str(del_effect).replace('?x', self.get_operator_bindings()['?x'])
+            del_effect = str(del_effect).replace('?y', self.get_operator_bindings()['?y'])
+            del_effect = str(del_effect).replace('[object]', 'object')
+            updated_del_effects.add(ast.literal_eval(del_effect)) if type(del_effect) is not str else updated_del_effects.add(del_effect)
+        return updated_preconditions, updated_add_effects, updated_del_effects
 
-    def fulfilled_preconditions(self, pick_action: bool):
+    def fulfilled_preconditions(self, pick_action: bool) -> bool:
         #Checks if our state fulfills and necessary action preconditions
-        state_preconditions, action_preconditions = self.get_state_preconditions(), self.substitute_params(pick_action)
+        state_preconditions = self.get_state_preconditions()
+        action_preconditions, _, _ = self.substitute_params(pick_action)
+        print(f"state_preconditions: {state_preconditions}")
+        print(f"action_preconditions: {action_preconditions}")
         for precondition in action_preconditions:
             if precondition not in state_preconditions:
                 print(f"Missing precondition: {precondition}")
@@ -136,7 +153,5 @@ if __name__ == "__main__":
     action = Action(csv_index=5, output_path='hehe.pddl.soln')
     print((action.get_action('ground_truth.csv')))
     action.write_action_operator(action.get_row('ground_truth.csv'), action.get_action('ground_truth.csv'))
-    actionop = ActionOperator(5, 'hehe.pddl', action, 'domain.pddl', 'problem.pddl')
-    print(actionop.get_state_preconditions())
-    print(actionop.substitute_params(pick_action=True))
+    actionop = ActionOperator(5, 'hehe.pddl', action, 'domain.pddl', 'problem.pddl', True)
     print(actionop.fulfilled_preconditions(True))
