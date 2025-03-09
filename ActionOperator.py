@@ -19,8 +19,8 @@ class Action:
 
     def __parse_action__(self, action):
         action_dict = {}
-        blocks = re.findall(r"\b\w*_block\b", action)
-        assert len(blocks) >= 2
+        blocks = re.findall(r"\b\w*_block\b|\btable\b", action)
+        print(blocks)
         action_dict['pick'] = blocks[0]
         action_dict['place'] = blocks[1]
         if action_dict['pick'] == action_dict['place'] and action_dict['pick'] != 'None':
@@ -37,8 +37,9 @@ class Action:
                 line1 = f"\n"
                 f.write(line0)
                 f.write(line1)
-                print("UM RIG")
-                return None
+                pick_action = 'None'
+                place_action = 'None'
+                return pick_action, place_action
             #First pick/unstack
             print(f"Start state: {start_state}")
             if start_state[self.action['pick']] != "table":
@@ -46,16 +47,20 @@ class Action:
                 line = f"(unstack {self.action['pick']} {start_state[self.action['pick']]})"
                 f.write(line)
                 pick_action = 'unstack'
-            else:
+            elif start_state[self.action['pick']] == "table":
+                print("PENIS")
                 line = f"(pick-up {self.action['pick']})"
                 f.write(line)
                 pick_action = 'pick-up'
+            else:
+                pass
             if end_state[self.action['pick']] != "table":
                 #If the object is not going to be placed on the table
                 line = f"\n(stack {self.action['pick']} {end_state[self.action['pick']]})"
                 f.write(line)
                 place_action = 'stack'
-            else:
+            elif end_state[self.action['pick']] == "table":
+                print("DOUBLE PENIS")
                 line = f"\n(put-down {self.action['pick']})"
                 f.write(line)
                 place_action = 'put-down'
@@ -108,6 +113,7 @@ class ActionOperator(Action):
 
         self.action_operator = Operator(self.action.name, self.deparam_action_preconditions, self.deparam_add_effects, self.deparam_del_effects)
         pyperplan_compliant = self.action_operator.applicable(self.state_preconditions)
+        print(f"Pyperplan compliant: {pyperplan_compliant}")
         if not pyperplan_compliant:
             raise BadModelPrediction()
 
@@ -146,7 +152,7 @@ class ActionOperator(Action):
             item = str(item).replace('[object]', 'object')
             updated_set.add(ast.literal_eval(item)) if type(item) is not str else updated_set.add(item)
         return updated_set
-
+#TODO Add handling of ?y variable if table is one of the blocks because otherwise the code will break
 if __name__ == "__main__":
     example_action = "pick: yellow_block place: blue_block"
     ba = Action('problem.pddl', example_action, 'hehe.pddl.soln')
