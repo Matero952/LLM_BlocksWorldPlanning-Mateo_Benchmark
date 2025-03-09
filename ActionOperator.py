@@ -6,15 +6,14 @@ from pyperplan.pddl.parser import Parser
 from pyperplan.task import Operator
 
 class Action:
-    def __init__(self, problem_file, action, output_path):
+    def __init__(self, problem_file, input_action, output_path):
         self.problem_file = problem_file
-        self.action = self.__parse_action__(action) if type(action) is str else action
+        self.action = self.__parse_action__(input_action) if type(input_action) is str else input_action
         self.output_path = output_path
         self.names = None
-        self.pick_action = None
-        self.place_action = None
-        #Initializes later
         self.start_state, self.end_state = self.__retrieve_problem__()
+        self.pick_action, self.place_action = self.__write_action_operator__()
+        self.operator_binds = self.get_operator_bindings()
 
     def __parse_action__(self, action):
         action_dict = {}
@@ -27,7 +26,6 @@ class Action:
     def __write_action_operator__(self):
         start_state = self.start_state
         end_state = self.end_state
-
         with open(self.output_path, 'w') as f:
             #Check 'None'
             if self.action['pick'] == "None":
@@ -35,27 +33,29 @@ class Action:
                 line1 = f"\n"
                 f.write(line0)
                 f.write(line1)
+                print("UM RIG")
                 return None
             #First pick/unstack
+            print(f"Start state: {start_state}")
             if start_state[self.action['pick']] != "table":
                 #If the object is not on the table
                 line = f"(unstack {self.action['pick']} {start_state[self.action['pick']]})"
                 f.write(line)
-                self.pick_action = 'unstack'
+                pick_action = 'unstack'
             else:
                 line = f"(pick-up {self.action['pick']})"
                 f.write(line)
-                self.pick_action = 'pick-up'
+                pick_action = 'pick-up'
             if end_state[self.action['pick']] != "table":
                 #If the object is not going to be placed on the table
                 line = f"\n(stack {self.action['pick']} {end_state[self.action['pick']]})"
                 f.write(line)
-                self.place_action = 'stack'
+                place_action = 'stack'
             else:
                 line = f"\n(put-down {self.action['pick']})"
                 f.write(line)
-                self.place_action = 'put-down'
-        return None
+                place_action = 'put-down'
+        return pick_action, place_action
         #Returns nothing
     def get_operator_bindings(self) -> dict:
         op_bindings = {'?x' : self.action['pick'], '?y' : self.action['place']}
@@ -86,19 +86,21 @@ class Action:
         return initial_placement_map, final_placement_map
 
 class ActionOperator(Action):
-    def __init__(self, output_path, action: Action, domain_file, problem_file, pick_action: bool):
-        super().__init__(problem_file=problem_file, action=action, output_path=output_path)
-        self.action = action
+    def __init__(self, domain_file, problem_file, action_object: Action, output_path, pick_action:bool):
+        super().__init__(problem_file, action_object.action, output_path)
         self.domain_file = domain_file
         self.problem_file = problem_file
+        self.action = action_object
+        self.action_binds = action_object.operator_binds
+        self.output_path = output_path
+        self.pick_action = pick_action
         self.parser = Parser(domain_file, problem_file)
-        self.action_preconditions, self.add_effects, self.del_effects = self.substitute_params(pick_action)
-        self.action_operator = Operator(name=self.action.names, preconditions=self.action_preconditions, add_effects=self.add_effects, del_effects=self.del_effects)
-    def get_action_preconditions(self, pick_action=False):
-        #Parsing parameterized action preconditions
-        domain_parsed = self.parser.parse_domain(read_from_file=True)
+    def __get_action_preconditions__(self):
+        domain_parsed = self.parser.parse_domain(True)
         for action_name, dom_action in domain_parsed.actions.items():
-            if (self.action.pick_action != action_name) if pick_action else (self.action.place_action != action_name):
+            if (self.action.pick_action != action_name) if self.pick_action else (self.action.place_action != action_name):
+                print(f"{self.action.pick_action}")
+                print("HEHE")
                 continue
                 # Skips to next
             else:
@@ -108,80 +110,136 @@ class ActionOperator(Action):
                 # Pyperplan expecting hashable, immutable type, so I just use a frozenset.
                 return precondition, add_effect, del_effect
         return frozenset(), frozenset(), frozenset()
-        #Happens if pick action is None. Preconditions are essentially met.
-
-    def get_state_preconditions(self):
+    #TODO Fix ussue in here.
+    def __get_state_preconditions__(self):
+        action_preconditions, _, _ = self.__get_action_preconditions__()
         #Parsing non-parameterized state preconditions
         domain_parsed = self.parser.parse_domain(read_from_file=True)
         problem_parsed = self.parser.parse_problem(domain_parsed, read_from_file=True)
         #Parses domain for problem
         updated_preconditions = set()
-        preconditions = set(problem_parsed.initial_state)
-        for precondition in preconditions:
+        state_preconditions = set(problem_parsed.initial_state)
+        print(f"state preconditions a: {state_preconditions}")
+        for precondition in state_preconditions:
             updated_preconditions.add(str(precondition))
             continue
-        updated_preconditions = updated_preconditions & self.action_preconditions
         return updated_preconditions
-        #Only return preconditions shared in the lists.
 
-    #TODO REWRITE THIS FUNCTION
-    def substitute_params(self, pick_action: bool):
-        #TODO Fix this function please ):
-        action_preconditions, add_effects, del_effects = self.get_action_preconditions(pick_action)
-        action_preconditions = set(action_preconditions)
-        add_effects = set(add_effects)
-        del_effects = set(del_effects)
-        #Overwrite action_preconditions from frozenset -> set
-        updated_preconditions = set()
-        updated_add_effects = set()
-        updated_del_effects = set()
-        for precondition in action_preconditions:
-            precondition = str(precondition).replace('?x', self.get_operator_bindings()['?x'])
-            precondition = str(precondition).replace('?y', self.get_operator_bindings()['?y'])
-            precondition = str(precondition).replace('[object]', 'object')
-            updated_preconditions.add(ast.literal_eval(precondition)) if type(precondition) is not str else updated_preconditions.add(precondition)
-            #Adding fixed element
-        print(f"new action_preconditions: {action_preconditions}")
-        for add_effect in add_effects:
-            add_effect = str(add_effect).replace('?x', self.get_operator_bindings()['?x'])
-            add_effect = str(add_effect).replace('?y', self.get_operator_bindings()['?y'])
-            add_effect = str(add_effect).replace('[object]', 'object')
-            updated_add_effects.add(ast.literal_eval(add_effect)) if type(add_effect) is not str else updated_add_effects.add(add_effect)
-        for del_effect in del_effects:
-            del_effect = str(del_effect).replace('?x', self.get_operator_bindings()['?x'])
-            del_effect = str(del_effect).replace('?y', self.get_operator_bindings()['?y'])
-            del_effect = str(del_effect).replace('[object]', 'object')
-            updated_del_effects.add(ast.literal_eval(del_effect)) if type(del_effect) is not str else updated_del_effects.add(del_effect)
-        return updated_preconditions, updated_add_effects, updated_del_effects
+    def __substitute_params__(self, input_set: set):
+        updated_set = set()
+        print(f"Input set: {input_set}")
+        for item in input_set:
+            item = str(item).replace('?x', self.action_binds['?x'])
+            item = str(item).replace('?y', self.action_binds['?y'])
+            item = str(item).replace('[object]', 'object')
+            updated_set.add(ast.literal_eval(item)) if type(item) is not str else updated_set.add(item)
+        print(f"Updated set: {updated_set}")
+        return updated_set
 
-    def fulfilled_preconditions(self, pick_action: bool) -> bool:
-        #Checks if our state fulfills and necessary action preconditions
-        state_preconditions = self.get_state_preconditions()
-        action_preconditions, _, _ = self.substitute_params(pick_action)
-        print(f"state_preconditions: {state_preconditions}")
-        print(f"action_preconditions: {action_preconditions}")
-        #'Just in case' pyperplan compatibility check.
-        for precondition in action_preconditions:
-            if precondition not in state_preconditions:
-                print(f"Missing precondition: {precondition}")
-                #Necessary preconditions not met
+    def __action_available__(self):
+        deparam_action_preconds = self.__substitute_params__(set(self.__get_action_preconditions__()))
+        state_preconds = self.__get_state_preconditions__()
+        for precondition in deparam_action_preconds:
+            if precondition not in state_preconds:
                 return False
-            else:
-                continue
-        #Necessary preconditions met
         return True
+
+# class ActionOperator(Action):
+#     def __init__(self, output_path, action: Action, domain_file, problem_file, pick_action: bool):
+#         super().__init__(problem_file=problem_file, action=action, output_path=output_path)
+#         self.action = action
+#         self.domain_file = domain_file
+#         self.problem_file = problem_file
+#         self.parser = Parser(domain_file, problem_file)
+#         self.action_preconditions, self.add_effects, self.del_effects = self.substitute_params(pick_action)
+#         self.action_operator = Operator(name=self.action.names, preconditions=self.action_preconditions, add_effects=self.add_effects, del_effects=self.del_effects)
+#     def get_action_preconditions(self, pick_action=False):
+#         #Parsing parameterized action preconditions
+#         domain_parsed = self.parser.parse_domain(read_from_file=True)
+#         for action_name, dom_action in domain_parsed.actions.items():
+#             if (self.action.pick_action != action_name) if pick_action else (self.action.place_action != action_name):
+#                 continue
+#                 # Skips to next
+#             else:
+#                 add_effect = frozenset(dom_action.effect.addlist)
+#                 del_effect = frozenset(dom_action.effect.dellist)
+#                 precondition = frozenset(dom_action.precondition)
+#                 # Pyperplan expecting hashable, immutable type, so I just use a frozenset.
+#                 return precondition, add_effect, del_effect
+#         return frozenset(), frozenset(), frozenset()
+#         #Happens if pick action is None. Preconditions are essentially met.
+#
+#     def get_state_preconditions(self):
+#         #Parsing non-parameterized state preconditions
+#         domain_parsed = self.parser.parse_domain(read_from_file=True)
+#         problem_parsed = self.parser.parse_problem(domain_parsed, read_from_file=True)
+#         #Parses domain for problem
+#         updated_preconditions = set()
+#         preconditions = set(problem_parsed.initial_state)
+#         for precondition in preconditions:
+#             updated_preconditions.add(str(precondition))
+#             continue
+#         updated_preconditions = updated_preconditions & self.action_preconditions
+#         return updated_preconditions
+#         #Only return preconditions shared in the lists.
+#
+#     #TODO REWRITE THIS FUNCTION
+#     def substitute_params(self, pick_action: bool):
+#         #TODO Fix this function please ):
+#         action_preconditions, add_effects, del_effects = self.get_action_preconditions(pick_action)
+#         action_preconditions = set(action_preconditions)
+#         add_effects = set(add_effects)
+#         del_effects = set(del_effects)
+#         #Overwrite action_preconditions from frozenset -> set
+#         updated_preconditions = set()
+#         updated_add_effects = set()
+#         updated_del_effects = set()
+#         for precondition in action_preconditions:
+#             precondition = str(precondition).replace('?x', self.get_operator_bindings()['?x'])
+#             precondition = str(precondition).replace('?y', self.get_operator_bindings()['?y'])
+#             precondition = str(precondition).replace('[object]', 'object')
+#             updated_preconditions.add(ast.literal_eval(precondition)) if type(precondition) is not str else updated_preconditions.add(precondition)
+#             #Adding fixed element
+#         print(f"new action_preconditions: {action_preconditions}")
+#         for add_effect in add_effects:
+#             add_effect = str(add_effect).replace('?x', self.get_operator_bindings()['?x'])
+#             add_effect = str(add_effect).replace('?y', self.get_operator_bindings()['?y'])
+#             add_effect = str(add_effect).replace('[object]', 'object')
+#             updated_add_effects.add(ast.literal_eval(add_effect)) if type(add_effect) is not str else updated_add_effects.add(add_effect)
+#         for del_effect in del_effects:
+#             del_effect = str(del_effect).replace('?x', self.get_operator_bindings()['?x'])
+#             del_effect = str(del_effect).replace('?y', self.get_operator_bindings()['?y'])
+#             del_effect = str(del_effect).replace('[object]', 'object')
+#             updated_del_effects.add(ast.literal_eval(del_effect)) if type(del_effect) is not str else updated_del_effects.add(del_effect)
+#         return updated_preconditions, updated_add_effects, updated_del_effects
+#
+#     def fulfilled_preconditions(self, pick_action: bool) -> bool:
+#         #Checks if our state fulfills and necessary action preconditions
+#         state_preconditions = self.get_state_preconditions()
+#         action_preconditions, _, _ = self.substitute_params(pick_action)
+#         print(f"state_preconditions: {state_preconditions}")
+#         print(f"action_preconditions: {action_preconditions}")
+#         #'Just in case' pyperplan compatibility check.
+#         for precondition in action_preconditions:
+#             if precondition not in state_preconditions:
+#                 print(f"Missing precondition: {precondition}")
+#                 #Necessary preconditions not met
+#                 return False
+#             else:
+#                 continue
+#         #Necessary preconditions met
+#         return True
 
 if __name__ == "__main__":
     example_action = "pick: red_block place: yellow_block"
     ba = Action('problem.pddl', example_action, 'hehe.pddl.soln')
-    ao = ActionOperator('hehe.pddl', ba, 'domain.pddl', 'problem.pddl', pick_action=True)
-    print(ao.get_action_preconditions())
-    print(ba.__retrieve_problem__())
-    ba.__parse_action__(example_action)
-    ba.__write_action_operator__()
+    print(ba.__parse_action__(example_action))
     print(ba.get_operator_bindings())
-
-
+    print(ba.__write_action_operator__())
+    ao = ActionOperator('domain.pddl', problem_file='problem.pddl', action_object=ba, pick_action=True, output_path=ba.output_path)
+    print(ao.__get_action_preconditions__())
+    print(ao.__get_state_preconditions__())
+    print(ao.__action_available__())
 
 # class StateTracker(ActionOperator):
 #     def __init__(self, action: Action, action_operator: ActionOperator, problem_file: str, pick_action: bool, domain_file):
