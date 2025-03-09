@@ -218,7 +218,104 @@ class TestCases(Enum):
     TEST160 = 'pick: yellow\nplace: red'
     TEST161 = 'pick: yellow\nplace: blue'
 
-    BADTEST1 = 'pick: red_block place: red_block'
-    BADTEST2 = 'pick: blue_block place: blue_block'
-    BADTEST3 = 'pick: yellow_block place: yellow_block'
+    BADTEST1 = 'pick: red place: red'
+    BADTEST2 = 'pick: blue place: blue'
+    BADTEST3 = 'pick: yellow place: yellow'
+
+    BADTEST4 = 'pick: red place: purple'
+    BADTEST5 = 'pick: blue place: orange'
+    BADTEST6 = 'pick: yellow place: green'
+
+    BADTEST7 = 'pick: red place: pink'
+    BADTEST8 = 'pick: blue place: gray'
+    BADTEST9 = 'pick: yellow place: brown'
+
+    BADTEST10 = 'pick: red place: black'
+    BADTEST11 = 'pick: blue place: white'
+    BADTEST12 = 'pick: yellow place: silver'
+
+    BADTEST13 = 'pick: red place: red_block'
+    BADTEST14 = 'pick: blue place: blue_block'
+    BADTEST15 = 'pick: yellow place: yellow_block'
+
+    BADTEST16 = 'pick: red_block place: purple'
+    BADTEST17 = 'pick: blue_block place: orange'
+    BADTEST18 = 'pick: yellow_block place: green'
+
+    BADTEST19 = 'pick: red place: red_block'
+    BADTEST20 = 'pick: blue place: blue_block'
+    BADTEST21 = 'pick: yellow place: yellow_block'
+
+    BADTEST22 = 'pick: purple place: red'
+    BADTEST23 = 'pick: orange place: blue'
+    BADTEST24 = 'pick: green place: yellow'
+
+    BADTEST25 = 'pick: pink place: red'
+    BADTEST26 = 'pick: gray place: blue'
+    BADTEST27 = 'pick: brown place: yellow'
+
+    BADTEST28 = 'grab: red move_to: red'
+    BADTEST29 = 'grab: blue move_to: blue'
+    BADTEST30 = 'grab: yellow move_to: yellow'
+
+    BADTEST31 = 'grab: red move_to: purple'
+    BADTEST32 = 'grab: blue move_to: orange'
+    BADTEST33 = 'grab: yellow move_to: green'
+
+    BADTEST34 = 'grab: red move_to: pink'
+    BADTEST35 = 'grab: blue move_to: gray'
+    BADTEST36 = 'grab: yellow move_to: brown'
+
+    BADTEST37 = 'grab: red move_to: black'
+    BADTEST38 = 'grab: blue move_to: white'
+    BADTEST39 = 'grab: yellow move_to: silver'
+
+    BADTEST40 = 'grab: red move_to: red_block'
+    BADTEST41 = 'grab: blue move_to: blue_block'
+    BADTEST42 = 'grab: yellow move_to: yellow_block'
+
+    BADTEST43 = 'grab: red_block move_to: purple'
+    BADTEST44 = 'grab: blue_block move_to: orange'
+    BADTEST45 = 'grab: yellow_block move_to: green'
+
+    BADTEST46 = 'grab: red move_to: red_block'
+    BADTEST47 = 'grab: blue move_to: blue_block'
+    BADTEST48 = 'grab: yellow move_to: yellow_block'
+
+    BADTEST49 = 'grab: purple move_to: red'
+    BADTEST50 = 'grab: orange move_to: blue'
+    BADTEST51 = 'grab: green move_to: yellow'
+
+    BADTEST52 = 'grab: pink move_to: red'
+    BADTEST53 = 'grab: gray move_to: blue'
+    BADTEST54 = 'grab: brown move_to: yellow'
+
+    BADTEST55 = 'lift: red drop_at: red'
+    BADTEST56 = 'lift: blue drop_at: blue'
+    BADTEST57 = 'lift: yellow drop_at: yellow'
+
+    BADTEST58 = 'lift: red drop_at: purple'
+    BADTEST59 = 'lift: blue drop_at: orange'
+    BADTEST60 = 'lift: yellow drop_at: green'
+
+    BADTEST61 = 'lift: red drop_at: pink'
+    BADTEST62 = 'lift: blue drop_at: gray'
+    BADTEST63 = 'lift: yellow drop_at: brown'
+
+    BADTEST64 = 'lift: red drop_at: black'
+    BADTEST65 = 'lift: blue drop_at: white'
+    BADTEST66 = 'lift: yellow drop_at: silver'
+
+    BADTEST67 = 'lift: red drop_at: red_block'
+    BADTEST68 = 'lift: blue drop_at: blue_block'
+    BADTEST69 = 'lift: yellow drop_at: yellow_block'
+
+    BADTEST70 = 'lift: red_block drop_at: purple'
+    BADTEST71 = 'lift: blue_block drop_at: orange'
+    BADTEST72 = 'lift: yellow_block drop_at: green'
+
+    BADTEST73 = 'lift: red drop_at: red_block'
+    BADTEST74 = 'lift: blue drop_at: blue_block'
+    BADTEST75 = 'lift: yellow drop_at: yellow_block'
+
 #TODO Make algorithm file that automatically generates these based on the pddl domain and states.
