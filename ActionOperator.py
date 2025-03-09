@@ -2,6 +2,8 @@ import ast
 import regex as re
 from pyperplan.pddl.parser import Parser
 from pyperplan.task import Operator
+from enum import Enum
+
 
 class BadModelPrediction(Exception):
     def __init__(self, message="Model prediction does not work."):
