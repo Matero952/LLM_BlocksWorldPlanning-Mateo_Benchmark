@@ -1,2 +1,2 @@
-pick-up red_block
-stack red_block yellow_block
+(unstack yellow_block red_block)
+(stack yellow_block red_block)
