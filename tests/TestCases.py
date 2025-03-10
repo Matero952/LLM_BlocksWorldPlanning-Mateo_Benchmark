@@ -217,7 +217,7 @@ class TestCases(Enum):
     TEST159 = 'pick: yellow\nplace: table'
     TEST160 = 'pick: yellow\nplace: red'
     TEST161 = 'pick: yellow\nplace: blue'
-
+    #Now, here are model outputs that SHOULD NOT work.
     BADTEST1 = 'pick: red place: red'
     BADTEST2 = 'pick: blue place: blue'
     BADTEST3 = 'pick: yellow place: yellow'
@@ -317,5 +317,3 @@ class TestCases(Enum):
     BADTEST73 = 'lift: red drop_at: red_block'
     BADTEST74 = 'lift: blue drop_at: blue_block'
     BADTEST75 = 'lift: yellow drop_at: yellow_block'
-
-#TODO Make algorithm file that automatically generates these based on the pddl domain and states.
