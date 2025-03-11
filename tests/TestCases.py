@@ -61,7 +61,7 @@ class TestCases(Enum):
     TEST44 = 'pick: yellow_block ;; -> place: red_block'
     TEST45 = 'pick: yellow_block ; -> place: blue_block'
 
-    TEST45 = 'pick: red_block\nplace: table'
+    # TEST45 = 'pick: red_block\nplace: table'
     TEST46 = 'pick: red_block\nplace: yellow_block'
     TEST47 = 'pick: red_block\nplace: blue_block'
 
