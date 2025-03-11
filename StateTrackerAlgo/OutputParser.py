@@ -59,7 +59,7 @@ class OutputParser:
         while '' in target_lines:
             target_lines.remove('')
         #Remove empty values
-        return target_lines
+        return target_lines#Coming soon.
 
     def get_matches(self, all_tokens_list: list, word_tolerance: int, actions: list, keywords: list, max_count: int):
         action_word_list = []
