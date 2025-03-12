@@ -1,1 +1,3 @@
-Coming soon.
+(domain (domain elevatorproblem)
+    (:requirements :strips)
+)
