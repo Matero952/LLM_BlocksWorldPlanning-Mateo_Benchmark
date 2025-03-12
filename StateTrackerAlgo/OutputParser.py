@@ -24,7 +24,6 @@ class OutputParser:
         print(f"Filtered_output: {filtered_output}")
         for output in filtered_output:
             tokens = output.split()
-            print(f"Tokens: {tokens}")
             all_tokens_list.append(tokens)
         actions = self.get_matches(all_tokens_list, word_tolerance, self.keyactions, self.keywords, 2)
         if actions:
@@ -71,8 +70,6 @@ class OutputParser:
                             if self.check_match_tolerance(keyword, ' '.join(token_list[index:index + word_tolerance])):
                                 action_word_map = {action : keyword}
                                 action_word_list.append(action_word_map)
-                                print(f"Tokens: {token_list[index:index + word_tolerance]}")
-                                print("BINGO")
         return action_word_list[:max_count]
 
 if __name__ == "__main__":

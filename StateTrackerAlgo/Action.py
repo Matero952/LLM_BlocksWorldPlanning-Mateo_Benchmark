@@ -54,16 +54,16 @@ class Action:
             if start_state[action['pick']] == 'table':
                 line0 = f"(pick-up {action['pick']})"
                 #Pick up if it is mapped to the table
-                f.write(line0)
             else:
                 line0 = f"(unstack {action['pick']} {start_state[action['pick']]})"
                 #Unstack if it is mapped to another block.
-                f.write(line0)
             #put-down/stack
             if action['place'] == 'table':
-                line1 = f"(put-down {action['pick']})"
+                line1 = f"\n(put-down {action['pick']})"
             else:
-                line1 = f"(stack {action['pick']} {action['place']})"
+                line1 = f"\n(stack {action['pick']} {action['place']})"
+            f.write(line0)
+            f.write(line1)
         return None
 
     #Helper functions
@@ -124,10 +124,11 @@ class Action:
 if __name__ == '__main__':
     op = OutputParser('../domain.pddl', '../problem.pddl', keyword1='table', keyaction1='pick', keyword2='red_block',
                       keyword3='yellow_block', keyword4='blue_block', keyword5='None', keyaction2='place')
-    string = ComplexTestCases.TEST5.value
+    string = ComplexTestCases.TEST3.value
     act = Action('../domain.pddl', '../problem.pddl', string, op)
     hehe = act.retrieve_action(3 ,3)
     print(hehe)
     ignore = ['clear', 'handempty']
     pepe = act.get_pyperplan_initial_state(ignore)
+    act.write_sol_file('../hehe.pddl.soln')
 
