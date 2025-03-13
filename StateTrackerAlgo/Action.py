@@ -1,70 +1,91 @@
+from typing import Optional
 from OutputParser import OutputParser
 from tests.ComplexTestCases import ComplexTestCases
 from pyperplan.pddl.parser import Parser
 from pyperplan.pddl.pddl import Predicate
 import os
-
-class BadModelPrediction(Exception):
-    def __init__(self, message="Model prediction does not work."):
+import ast
+class NoActionException(Exception):
+    def __init__(self, message="No change in state."):
         super().__init__(message)
+        #Please note that this exception is not actually an error but a signifier to the program that the action does nothing.
 
 class Action:
-    def __init__(self, domain, problem, model_output, output_parser: OutputParser):
-        #Action object that represents an action with its states
+    def __init__(self, domain, problem, action_dict: list, index):
         self.domain = domain
         self.problem = problem
-        self.pddl_parser = Parser(self.domain, self.problem)
-
-        self._model_output = model_output
-        self.output_parser = output_parser
-
-        self.ignore_list = ['clear', 'handempty']
-        #Add more here for more things to ignore.
-
-    def retrieve_action(self, word_tolerance, line_tolerance):
-        action0, action1 = self.output_parser.parse(self._model_output, word_tolerance, line_tolerance)
-        action = {**action0, **action1}
-        #Merges the pick and place dictionaries.
-        return action
+        self.object_mapping = {}
+        counter = 0
+        for i in action_dict:
+            for key, value in i.items():
+                if counter % 2 == 0:
+                    self.object_mapping['?x'] = value
+                else:
+                    self.object_mapping['?y'] = value
+                counter += 1
+        for value in self.object_mapping.values():
+            if value == 'None':
+                raise NoActionException()
+        self.action_dict = action_dict[index]
+        self.pddl_parser = Parser(domain, problem)
+        self.pyperplan_action = self.write_sol_file('../hehe.pddl.soln', ['clear', 'handempty'])
+        #Retrieves the action and writes the solution file at same time
 
     def get_pyperplan_initial_state(self, ignore_list):
         #Basically just gets the start state
         domain_parsed = self.pddl_parser.parse_domain(True)
         problem_parsed = self.pddl_parser.parse_problem(domain_parsed, True)
-        initial_state = problem_parsed.initial_state
-        block_placement = self.parse_initial_state(initial_state, ignore_list)
-        return block_placement
+        unfiltered_initial_state = problem_parsed.initial_state
+        print(f"Unfiltered initial state: {unfiltered_initial_state}")
+        block_placement = self.parse_initial_state(unfiltered_initial_state, ignore_list)
+        return block_placement, unfiltered_initial_state
 
-    def write_sol_file(self, output_path: str) -> None:
-        assert os.path.exists(output_path), f"{output_path} does not exist."
-        start_state = self.get_pyperplan_initial_state(self.ignore_list)
-        action = self.retrieve_action(3, 3)
-        #Word and line tolerance can both be tuned, but I think 4 is the upper bound of what they should.
-        with open(output_path, 'w') as f:
-            if action['pick'] == "None":
-            # Check 'None'
-                line0 = f""
-                line1 = f"\n"
-                f.write(line0)
-                f.write(line1)
-                pick_action = 'None'
-                place_action = 'None'
-                return None
-            #Pick/Unstack
-            if start_state[action['pick']] == 'table':
-                line0 = f"(pick-up {action['pick']})"
-                #Pick up if it is mapped to the table
+    def write_sol_file(self, output_path: str,ignore_list) -> str:
+        assert os.path.exists(output_path)
+        start_state, _ = self.get_pyperplan_initial_state(ignore_list)
+        with open(output_path, "w") as f:
+            for key, value in self.action_dict.items():
+                if key == 'pick':
+                    if value != 'None':
+                        if start_state[value] == 'table':
+                            line0 = f"(pick-up {value})"
+                            # Pick up if it is mapped to the table
+                            action = 'pick-up'
+                            f.write(line0)
+                        else:
+                            line0 = f"(unstack {value} {start_state[value]})"
+                            action = 'unstack'
+                            f.write(line0)
+                    else:
+                        raise NoActionException()
+                elif key == 'place':
+                    if value != 'None':
+                        if value == 'table':
+                            line0 = f"(put-down {value})"
+                            action = 'put-down'
+                            f.write(line0)
+                        else:
+                            line0 = f"(stack {value} {start_state[value]})"
+                            action = 'stack'
+                            f.write(line0)
+                    else:
+                        raise NoActionException()
+                else:
+                    raise ValueError('Key is not an expected value.')
+        return action
+
+    def get_param_action_attrs(self):
+        domain = self.pddl_parser.parse_domain(True)
+        for action_name, action in domain.actions.items():
+            if action_name == self.pyperplan_action:
+                precondition = frozenset(action.precondition)
+                add_effect = frozenset(action.effect.addlist)
+                del_effect = frozenset(action.effect.dellist)
+                return (self.deparam_action_attr(precondition, self.object_mapping)
+                        , self.deparam_action_attr(add_effect, self.object_mapping), self.deparam_action_attr(del_effect, self.object_mapping))
             else:
-                line0 = f"(unstack {action['pick']} {start_state[action['pick']]})"
-                #Unstack if it is mapped to another block.
-            #put-down/stack
-            if action['place'] == 'table':
-                line1 = f"\n(put-down {action['pick']})"
-            else:
-                line1 = f"\n(stack {action['pick']} {action['place']})"
-            f.write(line0)
-            f.write(line1)
-        return None
+                continue
+        raise ValueError('Whoops?!')
 
     #Helper functions
     @staticmethod
@@ -80,14 +101,14 @@ class Action:
         block_placement = Action.extract_object(block_placement, ['red_block', 'blue_block', 'yellow_block'])
         print(f"BLOCK PLACEMENT: {block_placement}")
         return block_placement
-
+#
     @staticmethod
     def filter_ignore(placement: Predicate, ignore_list: list):
         #If the placement type needs to be ignored, return true.
         if placement.name in ignore_list:
             return True
         return False
-
+#
     @staticmethod
     def get_start_state(block_placement: dict):
         updated_block_placement = {}
@@ -120,15 +141,26 @@ class Action:
                     updated_block_placement[object] = value
         return updated_block_placement
 
+    @staticmethod
+    def deparam_action_attr(action_att_with_param, object_attr_dict):
+        action_att_with_param = action_att_with_param.copy()
+        new_list = []
+        for key, value in object_attr_dict.items():
+            for predicate in action_att_with_param:
+                if 0 < len(predicate.signature):
+                    variable, _ = predicate.signature[0]
+                    if key in variable:
+                        predicate.signature[0] = value, _
+                        new_list.append(predicate)
+                else:
+                    new_list.append(predicate)
+        return action_att_with_param
 
 if __name__ == '__main__':
+    model_output = ComplexTestCases.TEST3.value
     op = OutputParser('../domain.pddl', '../problem.pddl', keyword1='table', keyaction1='pick', keyword2='red_block',
                       keyword3='yellow_block', keyword4='blue_block', keyword5='None', keyaction2='place')
-    string = ComplexTestCases.TEST3.value
-    act = Action('../domain.pddl', '../problem.pddl', string, op)
-    hehe = act.retrieve_action(3 ,3)
-    print(hehe)
-    ignore = ['clear', 'handempty']
-    pepe = act.get_pyperplan_initial_state(ignore)
-    act.write_sol_file('../hehe.pddl.soln')
+    action_dict = op.parse(model_output, 3, 3)
+    action = Action('../domain.pddl', '../problem.pddl', action_dict, 1)
+    print(action.get_param_action_attrs())
 

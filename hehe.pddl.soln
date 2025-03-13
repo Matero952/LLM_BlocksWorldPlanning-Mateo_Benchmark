@@ -1,2 +1,1 @@
-(pick-up blue_block)
-(stack blue_block red_block)
+(stack red_block table)
