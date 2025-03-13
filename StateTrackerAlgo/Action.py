@@ -1,8 +1,8 @@
-from typing import Optional
 from OutputParser import OutputParser
 from tests.ComplexTestCases import ComplexTestCases
 from pyperplan.pddl.parser import Parser
 from pyperplan.pddl.pddl import Predicate
+from pyperplan.pddl.pddl import Type
 import os
 import ast
 class NoActionException(Exception):
@@ -23,6 +23,7 @@ class Action:
                 else:
                     self.object_mapping['?y'] = value
                 counter += 1
+
         for value in self.object_mapping.values():
             if value == 'None':
                 raise NoActionException()
@@ -30,14 +31,16 @@ class Action:
         self.pddl_parser = Parser(domain, problem)
         self.pyperplan_action = self.write_sol_file('../hehe.pddl.soln', ['clear', 'handempty'])
         #Retrieves the action and writes the solution file at same time
+        self.action_preconditions, self.add_effects, self.del_effects = self.get_param_action_attrs()
 
     def get_pyperplan_initial_state(self, ignore_list):
         #Basically just gets the start state
         domain_parsed = self.pddl_parser.parse_domain(True)
         problem_parsed = self.pddl_parser.parse_problem(domain_parsed, True)
         unfiltered_initial_state = problem_parsed.initial_state
-        print(f"Unfiltered initial state: {unfiltered_initial_state}")
         block_placement = self.parse_initial_state(unfiltered_initial_state, ignore_list)
+        print(f"Block placement: {block_placement}")
+        print(f"Initial state: {frozenset(unfiltered_initial_state)}")
         return block_placement, unfiltered_initial_state
 
     def write_sol_file(self, output_path: str,ignore_list) -> str:
@@ -96,19 +99,17 @@ class Action:
             if skip:
                 continue
             block_placement[tuple(placement.signature)] = placement.name
-        print(type(block_placement))
         block_placement = Action.get_start_state(block_placement)
         block_placement = Action.extract_object(block_placement, ['red_block', 'blue_block', 'yellow_block'])
-        print(f"BLOCK PLACEMENT: {block_placement}")
         return block_placement
-#
+
     @staticmethod
     def filter_ignore(placement: Predicate, ignore_list: list):
         #If the placement type needs to be ignored, return true.
         if placement.name in ignore_list:
             return True
         return False
-#
+
     @staticmethod
     def get_start_state(block_placement: dict):
         updated_block_placement = {}
@@ -145,22 +146,25 @@ class Action:
     def deparam_action_attr(action_att_with_param, object_attr_dict):
         action_att_with_param = action_att_with_param.copy()
         new_list = []
+        object = Type('object', None)
+        #makeshift object type class solution please update and make dynamic
         for key, value in object_attr_dict.items():
             for predicate in action_att_with_param:
                 if 0 < len(predicate.signature):
+                    # variable, var_type = predicate.signature[0]
                     variable, _ = predicate.signature[0]
                     if key in variable:
-                        predicate.signature[0] = value, _
+                        predicate.signature[0] = value, object
                         new_list.append(predicate)
                 else:
                     new_list.append(predicate)
-        return action_att_with_param
+        return frozenset(new_list)
 
 if __name__ == '__main__':
     model_output = ComplexTestCases.TEST3.value
     op = OutputParser('../domain.pddl', '../problem.pddl', keyword1='table', keyaction1='pick', keyword2='red_block',
                       keyword3='yellow_block', keyword4='blue_block', keyword5='None', keyaction2='place')
     action_dict = op.parse(model_output, 3, 3)
-    action = Action('../domain.pddl', '../problem.pddl', action_dict, 1)
+    action = Action('../domain.pddl', '../problem.pddl', action_dict, 0)
     print(action.get_param_action_attrs())
 

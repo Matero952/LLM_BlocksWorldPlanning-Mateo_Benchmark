@@ -1,16 +1,36 @@
 from Action import Action
 from OutputParser import OutputParser
+from pyperplan.task import Operator
+from tests.ComplexTestCases import ComplexTestCases
+
 #Coming soon.
 class BadModelPrediction(Exception):
     def __init__(self, message="Model prediction does not work."):
         super().__init__(message)
 
 class ActionOperator:
-    def __init__(self, action: Action, domain_file, problem_file, output_parser: OutputParser, model_output):
+    def __init__(self, domain_file, problem_file, action: Action):
         #Inherits from action because we need a few attributes from it.
         #Only thing this class should be handling is the conversation of an action to an operator.
-        self.action = Action(domain_file, problem_file, model_output, output_parser)
+        self.action = action
         self.domain_file = domain_file
         self.problem_file = problem_file
-        self.output_parser = OutputParser(domain_file, problem_file, keyword1=None, keyaction1=None)
-        self.model_output = model_output
+
+    def write_operator(self):
+        name = self.action.pyperplan_action
+        preconditions = self.action.action_preconditions
+        add_effects = self.action.add_effects
+        del_effects = self.action.del_effects
+        action_operator = Operator(name, preconditions, add_effects, del_effects)
+        return action_operator
+
+    @staticmethod
+    def apply_operator(action_operator: Operator, state: frozenset):
+        new_state = action_operator.apply(state)
+        print(f"State prime: {new_state}")
+        breakpoint()
+        return new_state
+
+if __name__ == "__main__":
+    pass
+
