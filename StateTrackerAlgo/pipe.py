@@ -5,6 +5,7 @@ from Action import Action
 from ActionOperator import ActionOperator
 # from StateTrackerAlgo.Action import NoActionException
 from tests.ComplexTestCases import ComplexTestCases
+import gymnasium.envs.classic_control as classic_control
 
 class Pipe:
     def __init__(self, domain_file: str, problem_file: str, model_output: str, index):
